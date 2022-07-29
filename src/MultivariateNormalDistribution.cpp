@@ -10,23 +10,11 @@ namespace Random {
 
 namespace {
 
-// Singleton to access rng
-class RNG {
- public:
-  static std::mt19937& Get() {
-    static std::random_device rd;
-    static std::mt19937 mt_{rd()};
-    return mt_;
-  }
-
-  RNG(const RNG&) = delete;
-  RNG& operator=(const RNG&) = delete;
-  RNG(RNG&&) = delete;
-  RNG& operator=(RNG&&) = delete;
-
- private:
-  RNG() = default;
-};
+std::mt19937& RNG() {
+  static std::random_device rd;
+  static std::mt19937 mt_{rd()};
+  return mt_;
+}
 
 // Function for Cholesky Factorization of Matrix
 template <typename T>
@@ -69,7 +57,7 @@ class MultivariateNormalDistribution<T>::Impl {
       for (size_t j = 0; j < dims_; ++j) {
         result(i, j) = mean_->operator[](j);
         for (size_t k = 0; k < dims_; ++k) {
-          result(i, j) += covariance_(j, k) * dist_(RNG::Get());
+          result(i, j) += covariance_(j, k) * dist_(RNG());
         }
       }
     }
