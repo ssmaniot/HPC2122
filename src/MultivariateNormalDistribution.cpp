@@ -52,11 +52,11 @@ class MultivariateNormalDistribution<T>::Impl {
   // Return row-wise random sample vectors from underlying distribution
   Linalg::Matrix<T> generateRandomData(size_t sampleSize) {
     Linalg::Matrix<T> result(sampleSize, dims_);
-    // #pragma omp parallel for
+#pragma omp parallel for
     for (size_t n = 0; n < sampleSize; ++n) {
       for (size_t i = 0; i < dims_; ++i) {
         result(n, i) = mean_->operator[](i);
-        for (size_t j = 0; j < dims_; ++j) {
+        for (size_t j = 0; j < i; ++j) {
           result(n, i) += cholesky_(i, j) * dist_(RNG());
         }
       }
