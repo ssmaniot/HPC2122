@@ -13,15 +13,20 @@ namespace {
 // Singleton to access rng
 class RNG {
  public:
-  static std::mt19937& Get() { return mt_; }
+  static std::mt19937& Get() {
+    static std::random_device rd;
+    static std::mt19937 mt_{rd()};
+    return mt_;
+  }
+
+  RNG(const RNG&) = delete;
+  RNG& operator=(const RNG&) = delete;
+  RNG(RNG&&) = delete;
+  RNG& operator=(RNG&&) = delete;
 
  private:
-  static std::random_device rd_;
-  static std::mt19937 mt_;
+  RNG() = default;
 };
-
-std::random_device RNG::rd_;
-std::mt19937 RNG::mt_{RNG::rd_()};
 
 // Function for Cholesky Factorization of Matrix
 template <typename T>
