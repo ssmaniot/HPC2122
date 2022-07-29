@@ -42,22 +42,22 @@ Linalg::Matrix<T> CholeskyFactorization(const Linalg::Matrix<T>& input) {
 template <class T>
 class MultivariateNormalDistribution<T>::Impl {
  public:
-  Impl(const Linalg::Matrix<T>& A, const std::vector<T>& mean)
+  Impl(const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
       : dims_{mean.size()},
-        covariance_{CholeskyFactorization(A)},
+        cholesky_{CholeskyFactorization(covariance)},
         mean_(std::make_unique<std::vector<T>>(mean.size())) {
     std::copy(mean.begin(), mean.end(), mean_->begin());
   }
 
   // Return row-wise random sample vectors from underlying distribution
-  Linalg::Matrix<T> generateRandomData(size_t n) {
-    Linalg::Matrix<T> result(n, dims_);
-#pragma omp parallel for
-    for (size_t i = 0; i < n; ++i) {
-      for (size_t j = 0; j < dims_; ++j) {
-        result(i, j) = mean_->operator[](j);
-        for (size_t k = 0; k < dims_; ++k) {
-          result(i, j) += covariance_(j, k) * dist_(RNG());
+  Linalg::Matrix<T> generateRandomData(size_t sampleSize) {
+    Linalg::Matrix<T> result(sampleSize, dims_);
+    // #pragma omp parallel for
+    for (size_t n = 0; n < sampleSize; ++n) {
+      for (size_t i = 0; i < dims_; ++i) {
+        result(n, i) = mean_->operator[](i);
+        for (size_t j = 0; j < dims_; ++j) {
+          result(n, i) += cholesky_(i, j) * dist_(RNG());
         }
       }
     }
@@ -66,7 +66,7 @@ class MultivariateNormalDistribution<T>::Impl {
 
  private:
   size_t dims_;
-  Linalg::Matrix<T> covariance_;
+  Linalg::Matrix<T> cholesky_;
   std::unique_ptr<std::vector<T>> mean_;
   static std::normal_distribution<T> dist_;
 };
@@ -82,8 +82,8 @@ std::normal_distribution<T> MultivariateNormalDistribution<T>::Impl::dist_ =
 //     : pImpl_(std::make_unique<Impl>(A, mean)) {}
 template <class T>
 MultivariateNormalDistribution<T>::MultivariateNormalDistribution(
-    const Linalg::Matrix<T>& A, const std::vector<T>& mean)
-    : pImpl_{std::make_unique<Impl>(A, mean)} {}
+    const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
+    : pImpl_{std::make_unique<Impl>(covariance, mean)} {}
 
 template <class T>
 MultivariateNormalDistribution<T>::~MultivariateNormalDistribution() {}

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iomanip>
 #include <iostream>
 
 #include "MultivariateNormalDistribution.hpp"
@@ -146,6 +147,19 @@ const T& Matrix<T>::operator()(size_t row, size_t col) const {
 template <class T>
 T& Matrix<T>::operator()(size_t row, size_t col) {
   return pImpl_->operator()(row, col);
+}
+
+template <class T>
+void Matrix<T>::print() const {
+  std::cout << std::fixed << std::setprecision(5);
+  for (size_t row = 0; row < rows(); ++row) {
+    std::cout << '[';
+    for (size_t column = 0; column < cols(); ++column) {
+      std::cout << std::setw(9) << operator()(row, column);
+      if (column < cols() - 1) std::cout << ", ";
+    }
+    std::cout << "]\n";
+  }
 }
 
 // Supported template specialization for Matrix

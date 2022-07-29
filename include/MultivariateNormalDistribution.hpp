@@ -25,6 +25,8 @@ class Matrix {
   const T& operator()(size_t row, size_t col) const;
   T& operator()(size_t row, size_t col);
 
+  void print() const;
+
  private:
   class Impl;
   std::unique_ptr<Impl> pImpl_;
