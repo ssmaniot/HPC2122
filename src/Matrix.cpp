@@ -188,6 +188,7 @@ Linalg::Matrix<T> CholeskyFactorization(const Linalg::Matrix<T>& input) {
   return result;
 }
 
+// Supported template specialization for CholeskyFactorization()
 template Matrix<float> CholeskyFactorization(const Matrix<float>& input);
 template Matrix<double> CholeskyFactorization(const Matrix<double>& input);
 template Matrix<long double> CholeskyFactorization(

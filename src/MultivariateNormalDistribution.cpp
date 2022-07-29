@@ -58,9 +58,6 @@ std::normal_distribution<T> MultivariateNormalDistribution<T>::Impl::dist_ =
 
 // Code for MultivariateNormalDistribution
 
-// MultivariateNormalDistribution<T>::MultivariateNormalDistribution(
-//     const Matrix<T>& A, const std::vector<T>& mean)
-//     : pImpl_(std::make_unique<Impl>(A, mean)) {}
 template <class T>
 MultivariateNormalDistribution<T>::MultivariateNormalDistribution(
     const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
