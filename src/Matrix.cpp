@@ -168,5 +168,30 @@ template class Matrix<float>;
 template class Matrix<double>;
 template class Matrix<long double>;
 
+// Function for Cholesky Factorization of Matrix
+template <typename T>
+Linalg::Matrix<T> CholeskyFactorization(const Linalg::Matrix<T>& input) {
+  assert(input.rows() == input.cols());
+  size_t n = input.rows();
+  Linalg::Matrix<T> result(n, n, T{});
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t k = 0; k < i; ++k) {
+      T value = input(i, k);
+      for (size_t j = 0; j < k; ++j) value -= result(i, j) * result(k, j);
+      result(i, k) = value / result(k, k);
+    }
+    T value = input(i, i);
+    for (size_t j = 0; j < i; ++j) value -= result(i, j) * result(i, j);
+    result(i, i) = std::sqrt(value);
+  }
+  result.print();
+  return result;
+}
+
+template Matrix<float> CholeskyFactorization(const Matrix<float>& input);
+template Matrix<double> CholeskyFactorization(const Matrix<double>& input);
+template Matrix<long double> CholeskyFactorization(
+    const Matrix<long double>& input);
+
 }  // namespace Linalg
 }  // namespace MappedData

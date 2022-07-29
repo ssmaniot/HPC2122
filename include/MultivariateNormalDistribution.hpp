@@ -36,6 +36,15 @@ extern template class Matrix<float>;
 extern template class Matrix<double>;
 extern template class Matrix<long double>;
 
+template <class T>
+Matrix<T> CholeskyFactorization(const Matrix<T>& input);
+
+extern template Matrix<float> CholeskyFactorization(const Matrix<float>& input);
+extern template Matrix<double> CholeskyFactorization(
+    const Matrix<double>& input);
+extern template Matrix<long double> CholeskyFactorization(
+    const Matrix<long double>& input);
+
 }  // namespace Linalg
 
 namespace Random {

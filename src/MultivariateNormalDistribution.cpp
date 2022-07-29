@@ -16,25 +16,6 @@ std::mt19937& RNG() {
   return mt_;
 }
 
-// Function for Cholesky Factorization of Matrix
-template <typename T>
-Linalg::Matrix<T> CholeskyFactorization(const Linalg::Matrix<T>& input) {
-  assert(input.rows() == input.cols());
-  size_t n = input.rows();
-  Linalg::Matrix<T> result(n, n, T{});
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t k = 0; k < i; ++k) {
-      T value = input(i, k);
-      for (size_t j = 0; j < k; ++j) value -= result(i, j) * result(k, j);
-      result(i, k) = value / result(k, k);
-    }
-    T value = input(i, i);
-    for (size_t j = 0; j < i; ++j) value -= result(i, j) * result(i, j);
-    result(i, i) = std::sqrt(value);
-  }
-  return result;
-}
-
 }  // namespace
 
 // MND implementation
@@ -44,7 +25,7 @@ class MultivariateNormalDistribution<T>::Impl {
  public:
   Impl(const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
       : dims_{mean.size()},
-        cholesky_{CholeskyFactorization(covariance)},
+        cholesky_{Linalg::CholeskyFactorization(covariance)},
         mean_(std::make_unique<std::vector<T>>(mean.size())) {
     std::copy(mean.begin(), mean.end(), mean_->begin());
   }
@@ -56,7 +37,7 @@ class MultivariateNormalDistribution<T>::Impl {
     for (size_t n = 0; n < sampleSize; ++n) {
       for (size_t i = 0; i < dims_; ++i) {
         result(n, i) = mean_->operator[](i);
-        for (size_t j = 0; j < i; ++j) {
+        for (size_t j = 0; j <= i; ++j) {
           result(n, i) += cholesky_(i, j) * dist_(RNG());
         }
       }
