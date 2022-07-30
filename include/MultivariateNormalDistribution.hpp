@@ -17,6 +17,7 @@ class Matrix {
   Matrix(Matrix<T>&&);
   Matrix<T>& operator=(const Matrix<T>&);
   Matrix<T>& operator=(Matrix<T>&&);
+  Matrix<T> operator*(const Matrix<T>&);
   ~Matrix();
 
   size_t rows() const;
