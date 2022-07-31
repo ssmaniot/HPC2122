@@ -55,7 +55,7 @@ template <class T>
 class MultivariateNormalDistribution {
  public:
   MultivariateNormalDistribution(const Linalg::Matrix<T>& A,
-                                 const std::vector<T>& mean);
+                                 const Linalg::Matrix<T>& mean);
   ~MultivariateNormalDistribution();
   Linalg::Matrix<T> operator()(size_t n);
 

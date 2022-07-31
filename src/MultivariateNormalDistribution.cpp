@@ -24,12 +24,11 @@ std::mt19937& RNG() {
 template <class T>
 class MultivariateNormalDistribution<T>::Impl {
  public:
-  Impl(const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
-      : dims_{mean.size()},
-        cholesky_{Linalg::CholeskyFactorization(covariance)},
-        mean_(std::make_unique<std::vector<T>>(mean.size())) {
-    std::copy(mean.begin(), mean.end(), mean_->begin());
-  }
+  Impl(const Linalg::Matrix<T>& covariance, const Linalg::Matrix<T>& mean)
+      : dims_{mean.cols()},
+        cholesky_{std::make_unique<Linalg::Matrix<T>>(
+            std::move(Linalg::CholeskyFactorization(covariance)))},
+        mean_(std::make_unique<Linalg::Matrix<T>>(mean)) {}
 
   // Return row-wise random sample vectors from underlying distribution
   Linalg::Matrix<T> generateRandomData(size_t sampleSize) {
@@ -37,9 +36,9 @@ class MultivariateNormalDistribution<T>::Impl {
 #pragma omp parallel for
     for (size_t n = 0; n < sampleSize; ++n) {
       for (size_t i = 0; i < dims_; ++i) {
-        result(n, i) = mean_->operator[](i);
+        result(n, i) = mean_->operator()(0, i);
         for (size_t j = 0; j <= i; ++j) {
-          result(n, i) += cholesky_(i, j) * dist_(RNG());
+          result(n, i) += cholesky_->operator()(i, j) * dist_(RNG());
         }
       }
     }
@@ -48,8 +47,8 @@ class MultivariateNormalDistribution<T>::Impl {
 
  private:
   size_t dims_;
-  Linalg::Matrix<T> cholesky_;
-  std::unique_ptr<std::vector<T>> mean_;
+  std::unique_ptr<Linalg::Matrix<T>> cholesky_;
+  std::unique_ptr<Linalg::Matrix<T>> mean_;
   static std::normal_distribution<T> dist_;
 };
 
@@ -61,7 +60,7 @@ std::normal_distribution<T> MultivariateNormalDistribution<T>::Impl::dist_ =
 
 template <class T>
 MultivariateNormalDistribution<T>::MultivariateNormalDistribution(
-    const Linalg::Matrix<T>& covariance, const std::vector<T>& mean)
+    const Linalg::Matrix<T>& covariance, const Linalg::Matrix<T>& mean)
     : pImpl_{std::make_unique<Impl>(covariance, mean)} {}
 
 template <class T>

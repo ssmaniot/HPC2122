@@ -61,15 +61,15 @@ int main(int argc, char *argv[]) {
     std::cout << "------------------\n";
   }
 
+  static constexpr size_t N = 100000;
   for (auto x = 1; x < 4; ++x) {
     // MappedData::Random::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
     std::cout << "ROUND " << x << '\n';
     double d = static_cast<double>(x);
     MappedData::Linalg::Matrix<double> A{
         2, 2, {{2 * d, 1 * d}, {1 * d, 2 * d}}};
-    std::vector<double> v = {1 * d, 2 * d};
+    MappedData::Linalg::Matrix<double> v{1, 2, {{1 * d, 2 * d}}};
     MappedData::Random::MultivariateNormalDistribution<double> mnd{A, v};
-    static constexpr size_t N = 100000;
 
     // init chrono
     auto begin = std::chrono::high_resolution_clock::now();
