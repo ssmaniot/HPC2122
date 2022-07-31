@@ -4,6 +4,7 @@
 #include <random>
 
 #include "MappedData.hpp"
+#include "MatrixOperations.hpp"
 #include "MultivariateNormalDistribution.hpp"
 
 int main(int argc, char *argv[]) {
