@@ -64,11 +64,16 @@ int main(int argc, char *argv[]) {
   static constexpr size_t N = 1000000;
   for (auto x = 1; x < 4; ++x) {
     // MappedData::Random::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
+    std::cout << "-------------------------------\n";
     std::cout << "ROUND " << x << '\n';
     double d = static_cast<double>(x);
     MappedData::Linalg::Matrix<double> A{
         2, 2, {{2 * d, 1 * d}, {1 * d, 2 * d}}};
     MappedData::Linalg::Matrix<double> v{1, 2, {{1 * d, 2 * d}}};
+    std::cout << "Mean: ";
+    v.print();
+    std::cout << "Covariance matrix:\n";
+    A.print();
     MappedData::Random::MultivariateNormalDistribution<double> mnd{A, v};
 
     // init chrono
@@ -82,7 +87,6 @@ int main(int argc, char *argv[]) {
         std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
     // some nice output
-    // std::cout << "-------------------------------\n";
     std::cout << "Multivariate Normal Distribution (n = " << r.rows() << ")\n";
     std::cout << "Time       : " << elapsed.count() << "ms.\n";
     std::cout << "Result     :\n";

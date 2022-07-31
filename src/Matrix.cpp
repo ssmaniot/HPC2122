@@ -186,7 +186,6 @@ Linalg::Matrix<T> CholeskyFactorization(const Linalg::Matrix<T>& input) {
     for (size_t j = 0; j < i; ++j) value -= result(i, j) * result(i, j);
     result(i, i) = std::sqrt(value);
   }
-  result.print();
   return result;
 }
 
