@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     std::cout << "------------------\n";
   }
 
-  static constexpr size_t N = 100000;
+  static constexpr size_t N = 1000000;
   for (auto x = 1; x < 4; ++x) {
     // MappedData::Random::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
     std::cout << "ROUND " << x << '\n';
@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
     // std::cout << "-------------------------------\n";
     std::cout << "Multivariate Normal Distribution (n = " << r.rows() << ")\n";
     std::cout << "Time       : " << elapsed.count() << "ms.\n";
-
     std::cout << "Result     :\n";
 
     // r.print();
