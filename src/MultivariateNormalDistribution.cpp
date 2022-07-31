@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <random>
 
 namespace MappedData {
 namespace Random {

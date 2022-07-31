@@ -60,56 +60,68 @@ int main(int argc, char *argv[]) {
     std::cout << "------------------\n";
   }
 
-  // MappedData::Random::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
-  MappedData::Linalg::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
-  std::vector<double> v = {1, 2};
-  MappedData::Random::MultivariateNormalDistribution<double> mnd{A, v};
-  static constexpr size_t N = 100000;
+  for (auto x = 1; x < 4; ++x) {
+    // MappedData::Random::Matrix<double> A{2, 2, {{2, 1}, {1, 2}}};
+    std::cout << "ROUND " << x << '\n';
+    double d = static_cast<double>(x);
+    MappedData::Linalg::Matrix<double> A{
+        2, 2, {{2 * d, 1 * d}, {1 * d, 2 * d}}};
+    std::vector<double> v = {1 * d, 2 * d};
+    MappedData::Random::MultivariateNormalDistribution<double> mnd{A, v};
+    static constexpr size_t N = 100000;
 
-  // init chrono
-  auto begin = std::chrono::high_resolution_clock::now();
+    // init chrono
+    auto begin = std::chrono::high_resolution_clock::now();
 
-  MappedData::Linalg::Matrix<double> r = mnd(N);
+    MappedData::Linalg::Matrix<double> r = mnd(N);
 
-  // end timing
-  auto end = std::chrono::high_resolution_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+    // end timing
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
-  // some nice output
-  // std::cout << "-------------------------------\n";
-  std::cout << "Multivariate Normal Distribution (n = " << r.rows() << ")\n";
-  std::cout << "Time       : " << elapsed.count() << "ms.\n";
+    // some nice output
+    // std::cout << "-------------------------------\n";
+    std::cout << "Multivariate Normal Distribution (n = " << r.rows() << ")\n";
+    std::cout << "Time       : " << elapsed.count() << "ms.\n";
 
-  std::cout << "Result     :\n";
+    std::cout << "Result     :\n";
 
-  // r.print();
+    // r.print();
 
-  MappedData::Linalg::Matrix<double> mean(1, A.rows(), 0);
-  for (size_t i = 0; i < A.rows(); ++i) {
-    for (size_t n = 0; n < r.rows(); ++n) {
-      mean(0, i) += r(n, i);
-    }
-    mean(0, i) /= r.rows();
-  }
-
-  std::cout << "Sample mean: ";
-  mean.print();
-
-  MappedData::Linalg::Matrix<double> cov(2, 2, 0);
-  for (size_t i = 0; i < cov.rows(); ++i) {
-    for (size_t j = i; j < cov.rows(); ++j) {
+    MappedData::Linalg::Matrix<double> mean(1, A.rows(), 0);
+    for (size_t i = 0; i < A.rows(); ++i) {
       for (size_t n = 0; n < r.rows(); ++n) {
-        cov(i, j) += (r(n, i) - mean(0, i)) * (r(n, j) - mean(0, j));
+        mean(0, i) += r(n, i);
       }
-      cov(i, j) /= r.rows() - 1;
-      cov(j, i) = cov(i, j);
+      mean(0, i) /= r.rows();
     }
+
+    std::cout << "Sample mean: ";
+    mean.print();
+
+    MappedData::Linalg::Matrix<double> cov(2, 2, 0);
+    for (size_t i = 0; i < cov.rows(); ++i) {
+      for (size_t j = i; j < cov.rows(); ++j) {
+        for (size_t n = 0; n < r.rows(); ++n) {
+          cov(i, j) += (r(n, i) - mean(0, i)) * (r(n, j) - mean(0, j));
+        }
+        cov(i, j) /= r.rows() - 1;
+        cov(j, i) = cov(i, j);
+      }
+    }
+
+    std::cout << "Sample cov :\n";
+
+    cov.print();
   }
 
-  std::cout << "Sample cov :\n";
-
-  cov.print();
+  std::cout << "\n\n";
+  std::cout << "Matrix multiplication:\n";
+  MappedData::Linalg::Matrix<double> m1{2, 2, {{1., 0.}, {0., 1.}}};
+  auto result = m1 * MappedData::Linalg::Matrix<long double>{
+                         2, 3, {{1.L, 2.L, 3.L}, {4.L, 5.L, 6.L}}};
+  result.print();
 
   return 0;
 }

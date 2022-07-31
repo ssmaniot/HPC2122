@@ -1,4 +1,4 @@
-#include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 
@@ -147,22 +147,6 @@ const T& Matrix<T>::operator()(size_t row, size_t col) const {
 template <class T>
 T& Matrix<T>::operator()(size_t row, size_t col) {
   return pImpl_->operator()(row, col);
-}
-
-// Dot product
-
-template <class T>
-Matrix<T> Matrix<T>::operator*(const Matrix<T>& other) {
-  assert(cols() == other.rows());
-  Matrix<T> result{rows(), other.cols(), 0};
-  for (size_t i = 0; i < rows(); ++i) {
-    for (size_t j = 0; j < other.cols(); ++j) {
-      for (size_t k = 0; k < cols(); ++k) {
-        result(i, j) += operator()(i, k) * other(k, j);
-      }
-    }
-  }
-  return result;
 }
 
 // Pretty printer for Matrix

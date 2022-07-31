@@ -52,6 +52,7 @@
         "bitset": "cpp",
         "ctime": "cpp",
         "ratio": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "cassert": "cpp"
     }
 }
