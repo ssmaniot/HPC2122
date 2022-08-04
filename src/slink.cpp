@@ -75,90 +75,89 @@ void printIdx(T arr[], size_t n, std::string name, size_t padding, size_t idx[],
   std::cout << '\n';
 }
 
-constexpr size_t N = 10;
-constexpr size_t P = 2;
-
 int main(int argc, char *argv[]) {
   size_t i, j, k, n;
 
+  constexpr size_t N = 10;
+  constexpr size_t P = 2;
   DistanceMatrix dm{N};
-  // double m[N * P];
+  double m[N * P];
 
-  // m[0] = 1;
-  // m[1] = 1;
-  // m[2] = 1.5;
-  // m[3] = 1.5;
-  // m[4] = 5;
-  // m[5] = 5;
-  // m[6] = 3;
-  // m[7] = 4;
-  // m[8] = 4;
-  // m[9] = 4;
-  // m[10] = 3;
-  // m[11] = 3.5;
-
-  // for (i = 0; i < N; ++i) {
-  //   for (j = 0; j < i; ++j) {
-  //     for (k = 0; k < P; ++k) {
-  //       dm(i, j) =
-  //           (m[i * P + k] - m[j * P + k]) * (m[i * P + k] - m[j * P + k]);
-  //     }
-  //     dm(i, j) = std::sqrt(dm(i, j));
-  //     dm(j, i) = dm(i, j);
-  //   }
-  // }
-
-  dm(1, 0) = 1.2;
-  dm(2, 0) = 5;
-  dm(2, 1) = 3.4;
-  dm(3, 0) = 5;
-  dm(3, 1) = 4.1;
-  dm(3, 2) = 2.1;
-  dm(4, 0) = 4.2;
-  dm(4, 1) = 5;
-  dm(4, 2) = 6;
-  dm(4, 3) = 11;
-  dm(5, 0) = 7;
-  dm(5, 1) = 6;
-  dm(5, 2) = 6.2;
-  dm(5, 3) = 5;
-  dm(5, 4) = 1.9;
-  dm(6, 0) = 9;
-  dm(6, 1) = 4.1;
-  dm(6, 2) = 4.6;
-  dm(6, 3) = 13;
-  dm(6, 4) = 7;
-  dm(6, 5) = 7.5;
-  dm(7, 0) = 7.6;
-  dm(7, 1) = 6.4;
-  dm(7, 2) = 9;
-  dm(7, 3) = 4.1;
-  dm(7, 4) = 9;
-  dm(7, 5) = 5.6;
-  dm(7, 6) = 3.6;
-  dm(8, 0) = 11;
-  dm(8, 1) = 5.3;
-  dm(8, 2) = 11.3;
-  dm(8, 3) = 4.3;
-  dm(8, 4) = 5.5;
-  dm(8, 5) = 6.3;
-  dm(8, 6) = 8;
-  dm(8, 7) = 4.9;
-  dm(9, 0) = 4.3;
-  dm(9, 1) = 4.5;
-  dm(9, 2) = 22;
-  dm(9, 3) = 5.5;
-  dm(9, 4) = 4.3;
-  dm(9, 5) = 4.5;
-  dm(9, 6) = 10;
-  dm(9, 7) = 2.9;
-  dm(9, 8) = 4.1;
+  m[0] = 1;
+  m[1] = 1;
+  m[2] = 1.5;
+  m[3] = 1.5;
+  m[4] = 5;
+  m[5] = 5;
+  m[6] = 3;
+  m[7] = 4;
+  m[8] = 4;
+  m[9] = 4;
+  m[10] = 3;
+  m[11] = 3.5;
 
   for (i = 0; i < N; ++i) {
-    for (j = i + 1; j < N; ++j) {
-      dm(i, j) = dm(j, i);
+    for (j = 0; j < i; ++j) {
+      for (k = 0; k < P; ++k) {
+        dm(i, j) =
+            (m[i * P + k] - m[j * P + k]) * (m[i * P + k] - m[j * P + k]);
+      }
+      dm(i, j) = std::sqrt(dm(i, j));
+      dm(j, i) = dm(i, j);
     }
   }
+
+  // dm(1, 0) = 1.2;
+  // dm(2, 0) = 5;
+  // dm(2, 1) = 3.4;
+  // dm(3, 0) = 5;
+  // dm(3, 1) = 4.1;
+  // dm(3, 2) = 2.1;
+  // dm(4, 0) = 4.2;
+  // dm(4, 1) = 5;
+  // dm(4, 2) = 6;
+  // dm(4, 3) = 11;
+  // dm(5, 0) = 7;
+  // dm(5, 1) = 6;
+  // dm(5, 2) = 6.2;
+  // dm(5, 3) = 5;
+  // dm(5, 4) = 1.9;
+  // dm(6, 0) = 9;
+  // dm(6, 1) = 4.1;
+  // dm(6, 2) = 4.6;
+  // dm(6, 3) = 13;
+  // dm(6, 4) = 7;
+  // dm(6, 5) = 7.5;
+  // dm(7, 0) = 7.6;
+  // dm(7, 1) = 6.4;
+  // dm(7, 2) = 9;
+  // dm(7, 3) = 4.1;
+  // dm(7, 4) = 9;
+  // dm(7, 5) = 5.6;
+  // dm(7, 6) = 3.6;
+  // dm(8, 0) = 11;
+  // dm(8, 1) = 5.3;
+  // dm(8, 2) = 11.3;
+  // dm(8, 3) = 4.3;
+  // dm(8, 4) = 5.5;
+  // dm(8, 5) = 6.3;
+  // dm(8, 6) = 8;
+  // dm(8, 7) = 4.9;
+  // dm(9, 0) = 4.3;
+  // dm(9, 1) = 4.5;
+  // dm(9, 2) = 22;
+  // dm(9, 3) = 5.5;
+  // dm(9, 4) = 4.3;
+  // dm(9, 5) = 4.5;
+  // dm(9, 6) = 10;
+  // dm(9, 7) = 2.9;
+  // dm(9, 8) = 1.4;
+
+  // for (i = 0; i < N; ++i) {
+  //   for (j = i + 1; j < N; ++j) {
+  //     dm(i, j) = dm(j, i);
+  //   }
+  // }
 
 #ifdef DEBUG
   std::cout << "Distance matrix:\n";
@@ -260,6 +259,10 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
   std::cout << '\n';
   std::cout << "Sorted:\n";
+  size_t is[N];
+  std::iota(is, is + N, 1);
+  print(is, n, "m", 8);
+  print(idx, n, "i", 8, true);
   printIdx(pi, n, "pi", 8, idx, true);
   printIdx(lambda, n, "lambda", 8, idx);
 #endif
