@@ -15,6 +15,7 @@ namespace MappedData {
 template <class T>
 class MappedData {
  public:
+  MappedData() = default;
   MappedData(const char *fileName) {
     fname = fileName;
     fd = open(fileName, O_RDONLY);
@@ -91,11 +92,11 @@ class MappedData {
   size_t length() const noexcept { return size; }
 
  private:
-  std::string fname;
-  T *dataMatrix;
-  size_t fileSize;
-  size_t size;
-  int fd;
+  std::string fname{};
+  T *dataMatrix{nullptr};
+  size_t fileSize{0};
+  size_t size{0};
+  int fd{0};
 };
 
 }  // namespace MappedData

@@ -1,4 +1,5 @@
 main
 make_data
 slink
-Slink/
+data/
+data.bin
