@@ -121,8 +121,12 @@ class CSV::Impl {
     return msg;
   }
 
-  // Very basic check: if it contains a '.', check if it's floating point
-  // number; otherwise, check if numeric.
+  /**
+   * Computes the type of a token and returns it.
+   *
+   * @param token Token to be typed.
+   * @return A string representing the data type of the token.
+   */
   std::string computeDataType(const std::string& token) const {
     std::istringstream iss(token);
     double d;
