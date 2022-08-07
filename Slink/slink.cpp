@@ -9,6 +9,7 @@
 #include <memory>
 #include <random>
 
+#include "CSV.hpp"
 #include "MappedData.hpp"
 
 constexpr size_t PRECISION = 2;
@@ -72,6 +73,17 @@ void printIdx(T arr[], size_t n, std::string name, size_t padding, size_t idx[],
 
 int main(int argc, char *argv[]) {
   size_t i, j, k, n;
+
+  CSV::CSV doc;
+
+  try {
+    doc = CSV::CSV{"data/mydata.csv"};
+  } catch (const std::exception &e) {
+    std::cout << "[EXCEPTION] Error: " << e.what() << '\n';
+    return 1;
+  }
+
+  return 0;
 
   MappedData::MappedData<double> data;
   size_t N = 10, P;
@@ -216,30 +228,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  size_t idx[N + 1];
+  size_t idx[N];
   std::iota(&idx[0], &idx[N], 0);
   std::sort(&idx[0], &idx[N],
             [&lambda](size_t a, size_t b) { return lambda[a] < lambda[b]; });
-
-  size_t m;
-
-  for (m = 0; m < N - 1; ++m) {
-    bool found = false;
-    i = 0;
-    // TODO: improve search
-    while (i < m && !found) {
-      found = pi[idx[m]] == pi[idx[i]];
-      ++i;
-    }
-    std::cout << "m=" << m << ": ";
-    if (found) {
-      // TODO: clusters hierarchical merge
-      std::cout << idx[m] << " + " << pi[idx[m]] << '\n';
-    } else {
-      std::cout << pi[idx[m]] << " not exist, so " << idx[m] << " + "
-                << pi[idx[m]] << '\n';
-    }
-  }
 
   return 0;
 }
