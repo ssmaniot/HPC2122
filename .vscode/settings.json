@@ -53,6 +53,7 @@
         "ctime": "cpp",
         "ratio": "cpp",
         "iomanip": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "complex": "cpp"
     }
 }

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MULTIVARIATE_NORMAL_DISTRIBUTION_H
+#define MULTIVARIATE_NORMAL_DISTRIBUTION_H
 
 #include <cassert>
 #include <memory>
@@ -70,3 +71,5 @@ extern template class MultivariateNormalDistribution<long double>;
 
 }  // namespace Random
 }  // namespace MappedData
+
+#endif
