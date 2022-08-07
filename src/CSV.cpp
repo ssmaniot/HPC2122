@@ -101,6 +101,22 @@ class CSV::Impl {
     return tokens;
   }
 
+  /**
+   * Computes the type of a token and returns it.
+   *
+   * @param token Token to be typed.
+   * @return A string representing the data type of the token.
+   */
+  std::string computeDataType(const std::string& token) const {
+    std::istringstream iss(token);
+    double d;
+    iss >> std::noskipws >> d;
+    std::cout << "Token: \"" << token << "\", type: "
+              << ((iss.eof() && !iss.fail()) ? "Numeric" : "String") << '\n';
+
+    return (iss.eof() && !iss.fail()) ? "Numeric" : "String";
+  }
+
   std::string badLineFormatCSV(size_t row, size_t numTokens) const {
     std::string msg = "Bad line format in file \"" + m_fileName + "\": line ";
     msg += std::to_string(row);
@@ -119,22 +135,6 @@ class CSV::Impl {
                       "\" and type " + computeDataType(token) +
                       ", expected type is " + m_dataTypes[column];
     return msg;
-  }
-
-  /**
-   * Computes the type of a token and returns it.
-   *
-   * @param token Token to be typed.
-   * @return A string representing the data type of the token.
-   */
-  std::string computeDataType(const std::string& token) const {
-    std::istringstream iss(token);
-    double d;
-    iss >> std::noskipws >> d;
-    std::cout << "Token: \"" << token << "\", type: "
-              << ((iss.eof() && !iss.fail()) ? "Numeric" : "String") << '\n';
-
-    return (iss.eof() && !iss.fail()) ? "Numeric" : "String";
   }
 
   std::string m_delimiter{","};
