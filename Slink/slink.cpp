@@ -17,7 +17,7 @@ constexpr size_t WIDTH = 9;
 
 class DistanceMatrix {
  public:
-  DistanceMatrix(size_t n) : m_Data((n + 1) * (n + 1)), n{n} {
+  DistanceMatrix(size_t n) : m_Data((n + 1) * (n + 1)), m_shape{n} {
     for (size_t i = 0; i < n + 1; ++i) {
       m_Data[i * (n + 1) + n] = std::numeric_limits<double>::max();
       m_Data[n * (n + 1) + i] = std::numeric_limits<double>::max();
@@ -26,17 +26,17 @@ class DistanceMatrix {
 
   double &operator()(size_t i, size_t j) {
     // assert(i < n + 1 || j < n + 1);
-    return m_Data[i * (n + 1) + j];
+    return m_Data[i * (m_shape + 1) + j];
   }
 
   const double &operator()(size_t i, size_t j) const {
-    assert(i < n + 1 || j < n + 1);
-    return m_Data[i * (n + 1) + j];
+    assert(i < m_shape + 1 || j < m_shape + 1);
+    return m_Data[i * (m_shape + 1) + j];
   }
 
  private:
   std::vector<double> m_Data;
-  size_t n;
+  size_t m_shape;
 };
 
 template <class T>
@@ -77,11 +77,14 @@ int main(int argc, char *argv[]) {
   CSV::CSV doc;
 
   try {
-    doc = CSV::CSV{"data/mydata.csv"};
+    doc = CSV::CSV{"data/normal_groups.csv"};
   } catch (const std::exception &e) {
     std::cout << "[EXCEPTION] Error: " << e.what() << '\n';
     return 1;
   }
+
+  std::cout << "Document has " << doc.rows() << " rows and " << doc.cols()
+            << " columns.\n";
 
   return 0;
 
