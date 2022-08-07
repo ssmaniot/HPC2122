@@ -11,6 +11,16 @@ namespace CSV {
 
 class CSV::Impl {
  public:
+  // Accessors
+
+  CellProxy operator()(size_t row, size_t column) const {
+    return CellProxy(m_data[row][column], m_dataTypes[column]);
+  }
+
+  size_t rows() const { return m_rows; }
+  size_t cols() const { return m_cols; }
+
+  // Constructor
   Impl(const std::string& fileName, const std::string& delimiter = ",") {
     m_fileName = fileName;
     m_delimiter = delimiter;
@@ -165,6 +175,29 @@ CSV::CSV(CSV&& other) noexcept : m_pImpl{std::move(other.m_pImpl)} {}
 CSV& CSV::operator=(CSV&& other) noexcept {
   this->m_pImpl = std::move(other.m_pImpl);
   return *this;
+}
+
+// Accessors
+
+CellProxy CSV::operator()(size_t row, size_t column) const {
+  return m_pImpl->operator()(row, column);
+}
+
+size_t CSV::rows() const { return m_pImpl->rows(); }
+size_t CSV::cols() const { return m_pImpl->cols(); }
+
+// CellProxy
+
+double CellProxy::getNumeric() const {
+  if (m_dataType != "Numeric") {
+    throw std::runtime_error(
+        "Attempting to cast data of type \"String\" into a \"Numeric\" "
+        "value");
+  }
+  std::istringstream iss(m_data);
+  double d;
+  iss >> std::noskipws >> d;
+  return d;
 }
 
 }  // namespace CSV
