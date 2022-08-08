@@ -21,14 +21,12 @@ class CSV::Impl {
   size_t cols() const { return m_cols; }
 
   // Constructor
-  Impl(const std::string& fileName, const std::string& delimiter = ",") {
+  Impl(const std::string& fileName, const std::string& separator = ",") {
     m_fileName = fileName;
-    m_delimiter = delimiter;
+    m_separator = separator;
 
     std::ifstream str(m_fileName);
     std::string line;
-
-    std::cout << "Impl(\"" << fileName << "\", \"" << delimiter << "\")\n";
 
     if (!std::getline(str, line)) {
       throw std::runtime_error("File \"" + fileName + "\" is empty.");
@@ -67,7 +65,9 @@ class CSV::Impl {
     ++m_rows;
 
     while (std::getline(str, line)) {
+#ifdef DEBUG
       std::cout << "Row " << m_rows << '\n';
+#endif
       tokens = tokenize(line);
       if (tokens.size() != m_cols) {
         throw std::runtime_error(badLineFormatCSV(m_rows, tokens.size()));
@@ -85,7 +85,7 @@ class CSV::Impl {
 
  private:
   /**
-   * Splits a line from the CSV file using the delimiter into tokens, and
+   * Splits a line from the CSV file using the separator into tokens, and
    * returns an array containing the tokens.
    *
    * @param line String containing the line to be tokenized.
@@ -98,16 +98,22 @@ class CSV::Impl {
     std::string token;
     size_t from = 0;
     size_t n = 0;
+#ifdef DEBUG
     std::cout << "  Begin tokenizing:\n";
-    while ((pos = s.substr(from, std::string::npos).find(m_delimiter)) !=
+#endif
+    while ((pos = s.substr(from, std::string::npos).find(m_separator)) !=
            std::string::npos) {
       token = s.substr(from, pos);
+#ifdef DEBUG
       std::cout << "    Token " << ++n << ": \"" << token
                 << "\", type: " << computeDataType(token) << '\n';
+#endif
       tokens.emplace_back(token);
-      from += pos + m_delimiter.length();
+      from += pos + m_separator.length();
     }
+#ifdef DEBUG
     std::cout << "  Done.\n";
+#endif
     return tokens;
   }
 
@@ -121,9 +127,10 @@ class CSV::Impl {
     std::istringstream iss(token);
     double d;
     iss >> std::noskipws >> d;
+#ifdef DEBUG
     std::cout << "Token: \"" << token << "\", type: "
               << ((iss.eof() && !iss.fail()) ? "Numeric" : "String") << '\n';
-
+#endif
     return (iss.eof() && !iss.fail()) ? "Numeric" : "String";
   }
 
@@ -147,7 +154,7 @@ class CSV::Impl {
     return msg;
   }
 
-  std::string m_delimiter{","};
+  std::string m_separator{","};
   size_t m_rows{0};
   size_t m_cols{0};
   std::string m_fileName{};
@@ -165,8 +172,8 @@ CSV::CSV() = default;
 CSV::CSV(const std::string& fileName)
     : m_pImpl{std::make_unique<Impl>(fileName)} {}
 
-CSV::CSV(const std::string& fileName, const std::string& delimiter)
-    : m_pImpl{std::make_unique<Impl>(fileName, delimiter)} {}
+CSV::CSV(const std::string& fileName, const std::string& separator)
+    : m_pImpl{std::make_unique<Impl>(fileName, separator)} {}
 
 CSV::~CSV() = default;
 

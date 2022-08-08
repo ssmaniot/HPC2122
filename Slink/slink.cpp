@@ -76,8 +76,13 @@ int main(int argc, char *argv[]) {
 
   CSV::CSV doc;
 
+  if (argc != 2) {
+    std::cerr << "Error, correct usage: ./slink <input_file>\n";
+    return 1;
+  }
+
   try {
-    doc = CSV::CSV{"data/normal_groups.csv"};
+    doc = CSV::CSV{argv[1]};
   } catch (const std::exception &e) {
     std::cout << "[EXCEPTION] Error: " << e.what() << '\n';
     return 1;
