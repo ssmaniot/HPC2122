@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
@@ -8,6 +9,7 @@
 #include <limits>
 #include <memory>
 #include <random>
+#include <vector>
 
 #include "CSV.hpp"
 #include "MappedData.hpp"
@@ -33,6 +35,9 @@ class DistanceMatrix {
     assert(i < m_shape + 1 || j < m_shape + 1);
     return m_Data[i * (m_shape + 1) + j];
   }
+
+  size_t rows() const { return m_shape; }
+  size_t cols() const { return m_shape; }
 
  private:
   std::vector<double> m_Data;
@@ -91,88 +96,63 @@ int main(int argc, char *argv[]) {
   std::cout << "Document has " << doc.rows() << " rows and " << doc.cols()
             << " columns.\n";
 
-  return 0;
+  auto header = doc.getHeader();
+  std::cout << "Header:";
+  for (const auto &s : header) {
+    std::cout << ' ' << s;
+  }
+  std::cout << std::endl;
 
-  MappedData::MappedData<double> data;
-  size_t N = 10, P;
-  P = 2;
-
-  if (false) {
-    try {
-      data = MappedData::MappedData<double>("data.bin");
-      N = data.length() / P;
-    } catch (const std::exception &e) {
-      std::cout << "[EXCEPTION] Error: " << e.what() << '\n';
-    }
-
-    std::cout << "N = " << N << '\n';
-
-    DistanceMatrix dm{N};
-#pragma omp parallel for
-    for (i = 0; i < N; ++i) {
-      for (j = 0; j < i; ++j) {
-        dm(i, j) = 0;
-        for (k = 0; k < P; ++k) {
-          dm(i, j) += data[i * P + k] * data[k + j * P];
-        }
-        dm(i, j) = std::sqrt(dm(i, j));
-        dm(j, i) = dm(i, j);
-      }
+  auto dataTypes = doc.getDataTypes();
+  size_t N = doc.rows();
+  std::vector<size_t> numericIndexes{};
+  for (i = 0; i < dataTypes.size(); ++i) {
+    if (dataTypes[i] == "Numeric") {
+      numericIndexes.push_back(i);
     }
   }
+  size_t P = numericIndexes.size();
+
+  std::cout << "Dataset with n = " << N << " elements, p = " << P << ".\n";
+  std::cout << "Variables with \"String\" data type:";
+  for (i = 0; i < header.size(); ++i) {
+    if (dataTypes[i] == "String") {
+      std::cout << ' ' << header[i];
+    }
+  }
+  std::cout << std::endl;
+
+  // init chrono
+  std::cout << "Building distance matrix... (size n = " << N << ")\n";
+  auto begin = std::chrono::high_resolution_clock::now();
 
   DistanceMatrix dm{N};
-  dm(1, 0) = 1.2;
-  dm(2, 0) = 5;
-  dm(2, 1) = 3.4;
-  dm(3, 0) = 5;
-  dm(3, 1) = 4.1;
-  dm(3, 2) = 2.1;
-  dm(4, 0) = 4.2;
-  dm(4, 1) = 5;
-  dm(4, 2) = 6;
-  dm(4, 3) = 11;
-  dm(5, 0) = 7;
-  dm(5, 1) = 6;
-  dm(5, 2) = 6.2;
-  dm(5, 3) = 5;
-  dm(5, 4) = 1.9;
-  dm(6, 0) = 9;
-  dm(6, 1) = 4.1;
-  dm(6, 2) = 4.6;
-  dm(6, 3) = 13;
-  dm(6, 4) = 7;
-  dm(6, 5) = 7.5;
-  dm(7, 0) = 7.6;
-  dm(7, 1) = 6.4;
-  dm(7, 2) = 9;
-  dm(7, 3) = 4.1;
-  dm(7, 4) = 9;
-  dm(7, 5) = 5.6;
-  dm(7, 6) = 3.6;
-  dm(8, 0) = 11;
-  dm(8, 1) = 5.3;
-  dm(8, 2) = 11.3;
-  dm(8, 3) = 4.3;
-  dm(8, 4) = 5.5;
-  dm(8, 5) = 6.3;
-  dm(8, 6) = 8;
-  dm(8, 7) = 4.9;
-  dm(9, 0) = 4.3;
-  dm(9, 1) = 4.5;
-  dm(9, 2) = 22;
-  dm(9, 3) = 5.5;
-  dm(9, 4) = 4.3;
-  dm(9, 5) = 4.5;
-  dm(9, 6) = 10;
-  dm(9, 7) = 2.9;
-  dm(9, 8) = 1.4;
-
+  // #pragma omp parallel for
   for (i = 0; i < N; ++i) {
-    for (j = i + 1; j < N; ++j) {
-      dm(i, j) = dm(j, i);
+    for (j = 0; j < i; ++j) {
+      dm(i, j) = 0;
+      for (k = 0; k < P; ++k) {
+        dm(i, j) += doc(i, numericIndexes[k]).getNumeric() *
+                    doc(j, numericIndexes[k]).getNumeric();
+      }
+      dm(i, j) = std::sqrt(dm(i, j));
+      dm(j, i) = dm(i, j);
     }
   }
+
+  // end timing
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+
+  // some nice output
+  std::cout << "Done.\n";
+  std::cout << "Time       : " << elapsed.count() << "ms.\n";
+  std::cout << "Result     :\n";
+
+  // init chrono
+  std::cout << "Begin clustering... (size n = " << N << ")\n";
+  begin = std::chrono::high_resolution_clock::now();
 
   size_t pi[N + 1];
   double lambda[N + 1];
@@ -240,6 +220,15 @@ int main(int argc, char *argv[]) {
   std::iota(&idx[0], &idx[N], 0);
   std::sort(&idx[0], &idx[N],
             [&lambda](size_t a, size_t b) { return lambda[a] < lambda[b]; });
+
+  // end timing
+  end = std::chrono::high_resolution_clock::now();
+  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+
+  // some nice output
+  std::cout << "Done.\n";
+  std::cout << "Time       : " << elapsed.count() << "ms.\n";
+  std::cout << "Result     :\n";
 
   return 0;
 }
