@@ -114,6 +114,16 @@ class CSV::Impl {
       tokens.emplace_back(token);
       from += pos + m_separator.length();
     }
+
+    // Check if there is another element after last occurence of separator
+    token = s.substr(from, std::string::npos);
+    if (!token.empty()) {
+#ifdef DEBUG
+      std::cout << "    Token " << ++n << ": \"" << token
+                << "\", type: " << computeDataType(token) << '\n';
+#endif
+      tokens.emplace_back(token);
+    }
 #ifdef DEBUG
     std::cout << "  Done.\n";
 #endif
