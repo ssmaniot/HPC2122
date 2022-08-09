@@ -20,6 +20,9 @@ class CSV::Impl {
   size_t rows() const { return m_rows; }
   size_t cols() const { return m_cols; }
 
+  const std::vector<std::string>& getHeader() const { return m_header; }
+  const std::vector<std::string>& getDataTypes() const { return m_dataTypes; }
+
   // Constructor
   Impl(const std::string& fileName, const std::string& separator = ",") {
     m_fileName = fileName;
@@ -192,6 +195,14 @@ CellProxy CSV::operator()(size_t row, size_t column) const {
 
 size_t CSV::rows() const { return m_pImpl->rows(); }
 size_t CSV::cols() const { return m_pImpl->cols(); }
+
+const std::vector<std::string>& CSV::getHeader() const {
+  return m_pImpl->getHeader();
+}
+
+const std::vector<std::string>& CSV::getDataTypes() const {
+  return m_pImpl->getDataTypes();
+}
 
 // CellProxy
 

@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <memory>
+#include <vector>
 
 namespace CSV {
 
@@ -31,6 +32,8 @@ class CSV {
   CSV& operator=(const CSV&) = delete;
   CSV& operator=(CSV&& other) noexcept;
 
+  const std::vector<std::string>& getHeader() const;
+  const std::vector<std::string>& getDataTypes() const;
   CellProxy operator()(size_t row, size_t column) const;
   size_t rows() const;
   size_t cols() const;
