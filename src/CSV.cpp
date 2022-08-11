@@ -14,7 +14,7 @@ class CSV::Impl {
   // Accessors
 
   CellProxy operator()(size_t row, size_t column) const {
-    return CellProxy(m_data[row][column], m_dataTypes[column]);
+    return CellProxy(m_data[row][column], m_dataTypes[column], row, column);
   }
 
   size_t rows() const { return m_rows; }
@@ -140,10 +140,6 @@ class CSV::Impl {
     std::istringstream iss(token);
     double d;
     iss >> std::noskipws >> d;
-#ifdef DEBUG
-    std::cout << "Token: \"" << token << "\", type: "
-              << ((iss.eof() && !iss.fail()) ? "Numeric" : "String") << '\n';
-#endif
     return (iss.eof() && !iss.fail()) ? "Numeric" : "String";
   }
 
@@ -219,7 +215,9 @@ const std::vector<std::string>& CSV::getDataTypes() const {
 double CellProxy::getNumeric() const {
   if (m_dataType != "Numeric") {
     throw std::runtime_error(
-        "Attempting to cast data of type \"String\" into a \"Numeric\" "
+        "on row " + std::to_string(m_row) + ", column " +
+        std::to_string(m_col) +
+        ": attempting to cast data of type \"String\" into a \"Numeric\" "
         "value");
   }
   std::istringstream iss(m_data);

@@ -9,8 +9,9 @@ namespace CSV {
 
 class CellProxy {
  public:
-  CellProxy(const std::string& data, const std::string& dataType)
-      : m_data{data}, m_dataType{dataType} {}
+  CellProxy(const std::string& data, const std::string& dataType, size_t row,
+            size_t column)
+      : m_data{data}, m_dataType{dataType}, m_row{row}, m_col{column} {}
 
   double getNumeric() const;
 
@@ -19,6 +20,8 @@ class CellProxy {
  private:
   const std::string& m_data;
   const std::string& m_dataType;
+  size_t m_row;
+  size_t m_col;
 };
 
 class CSV {
