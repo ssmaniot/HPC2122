@@ -45,14 +45,14 @@ class DistanceMatrix {
 };
 
 template <class T>
-void print(T arr[], size_t n, std::string name, size_t padding,
+void print(T arr[], size_t n, std::string name, size_t padding = 8,
            bool off = false) {
   std::cout << std::setw(padding) << name << ": ";
   for (size_t i = 0; i < n; ++i) {
     if (arr[i] == std::numeric_limits<T>::max()) {
       std::cout << std::setw(WIDTH) << "Inf" << ' ';
     } else {
-      T val = (off ? arr[i] + T{1} : arr[i]);
+      T val = (off ? *(arr + i) + T{1} : arr[i]);
       std::cout << std::setw(WIDTH) << val << ' ';
     }
   }
@@ -60,10 +60,11 @@ void print(T arr[], size_t n, std::string name, size_t padding,
 }
 
 template <class T>
-void printIdx(T arr[], size_t n, std::string name, size_t padding, size_t idx[],
-              bool off = false) {
+void printIdx(T arr[], size_t n, std::string name, size_t idx[],
+              size_t padding = 8, bool off = false) {
   std::cout << std::setw(padding) << name << ": ";
   for (size_t i = 0; i < n; ++i) {
+    // std::cout << "Printing index " << idx[i] << '\n';
     if (arr[idx[i]] == std::numeric_limits<T>::max()) {
       std::cout << std::setw(WIDTH) << "Inf" << ' ';
     } else {
@@ -81,13 +82,20 @@ int main(int argc, char *argv[]) {
 
   CSV::CSV doc;
 
-  if (argc != 2) {
-    std::cerr << "Error, correct usage: ./slink <input_file>\n";
+  if (argc < 2 || argc > 3) {
+    std::cerr
+        << "Error, correct usage: ./slink <input_file> [<group_feature>]\n";
     return 1;
+  }
+  std::string fileName = argv[1];
+  std::string groupFeature{};
+  bool groupFeatureSpecified = (argc == 3);
+  if (groupFeatureSpecified) {
+    groupFeature = argv[2];
   }
 
   try {
-    doc = CSV::CSV{argv[1]};
+    doc = CSV::CSV{fileName};
   } catch (const std::exception &e) {
     std::cout << "[EXCEPTION] Error: " << e.what() << '\n';
     return 1;
@@ -97,17 +105,24 @@ int main(int argc, char *argv[]) {
             << " columns.\n";
 
   auto header = doc.getHeader();
+  if (groupFeatureSpecified && std::find(std::begin(header), std::end(header),
+                                         groupFeature) == std::end(header)) {
+    std::cerr << "Error, feature \"" << groupFeature
+              << "\" is not in header.\n";
+    return 1;
+  }
   std::cout << "Header:";
   for (const auto &s : header) {
     std::cout << ' ' << s;
   }
-  std::cout << std::endl;
+  std::cout << '\n';
 
   auto dataTypes = doc.getDataTypes();
   size_t N = doc.rows();
   std::vector<size_t> numericIndexes{};
   for (i = 0; i < dataTypes.size(); ++i) {
-    if (dataTypes[i] == "Numeric") {
+    if (!(groupFeatureSpecified && header[i] == groupFeature) &&
+        dataTypes[i] == "Numeric") {
       numericIndexes.push_back(i);
     }
   }
@@ -120,39 +135,12 @@ int main(int argc, char *argv[]) {
       std::cout << ' ' << header[i];
     }
   }
-  std::cout << std::endl;
-
-  // init chrono
-  std::cout << "Building distance matrix... (size n = " << N << ")\n";
-  auto begin = std::chrono::high_resolution_clock::now();
-
-  DistanceMatrix dm{N};
-  // #pragma omp parallel for
-  for (i = 0; i < N; ++i) {
-    for (j = 0; j < i; ++j) {
-      dm(i, j) = 0;
-      for (k = 0; k < P; ++k) {
-        dm(i, j) += doc(i, numericIndexes[k]).getNumeric() *
-                    doc(j, numericIndexes[k]).getNumeric();
-      }
-      dm(i, j) = std::sqrt(dm(i, j));
-      dm(j, i) = dm(i, j);
-    }
-  }
-
-  // end timing
-  auto end = std::chrono::high_resolution_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-
-  // some nice output
+  std::cout << '\n';
   std::cout << "Done.\n";
-  std::cout << "Time       : " << elapsed.count() << "ms.\n";
-  std::cout << "Result     :\n";
 
   // init chrono
   std::cout << "Begin clustering... (size n = " << N << ")\n";
-  begin = std::chrono::high_resolution_clock::now();
+  auto begin = std::chrono::high_resolution_clock::now();
 
   size_t pi[N + 1];
   double lambda[N + 1];
@@ -169,6 +157,9 @@ int main(int argc, char *argv[]) {
 
   // Algorithm main loop
   for (n = 1; n < N; ++n) {
+    // std::cout << "\rCurrent step: " << n << "/" << N << " ("
+    //           << std::ceil(10000. * static_cast<double>(n) / N) / 100.
+    //           << "%)  ";
 #ifdef DEBUG
     std::cout << "Processing n=" << n << '\n';
     std::cout << "  Init:\n";
@@ -177,8 +168,15 @@ int main(int argc, char *argv[]) {
     // Initialization
     pi[n] = n;
     lambda[n] = std::numeric_limits<double>::max();
+
+#pragma omp parallel for
     for (i = 0; i < n; ++i) {
-      M[i] = dm(i, n);
+      M[i] = 0;
+      for (const auto j : numericIndexes) {
+        double ij = doc(i, j).getNumeric();
+        double nj = doc(n, j).getNumeric();
+        M[i] += (ij - nj) * (ij - nj);
+      }
     }
 
 #ifdef DEBUG
@@ -222,13 +220,54 @@ int main(int argc, char *argv[]) {
             [&lambda](size_t a, size_t b) { return lambda[a] < lambda[b]; });
 
   // end timing
-  end = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
   // some nice output
-  std::cout << "Done.\n";
+  std::cout << "\rDone.                            \n";
   std::cout << "Time       : " << elapsed.count() << "ms.\n";
   std::cout << "Result     :\n";
+
+#ifdef DEBUG
+  std::cout << '\n';
+  std::cout << "Sorted:\n";
+  size_t is[N];
+  std::iota(is, is + N, 0);
+  size_t resPerLine = 10;
+
+  i = 0;
+  do {
+    print(is + i, std::min(resPerLine, N - i), "m", 8);
+    print(idx + i, std::min(resPerLine, N - i), "i", 8);
+    printIdx(pi + i, std::min(resPerLine, N - i), "pi", idx + i);
+    printIdx(lambda + i, std::min(resPerLine, N - i), "lambda", idx + i);
+    i += resPerLine;
+  } while (i < N);
+#endif
+  if (false) {
+    size_t m;
+    std::cout << "\ni     : ";
+    for (m = 0; m < N; ++m) {
+      std::cout << std::setw(2) << m << ' ';
+    }
+    std::cout << '\n';
+    std::cout << "idx   : ";
+    for (m = 0; m < N; ++m) {
+      std::cout << std::setw(2) << idx[m] << ' ';
+    }
+    std::cout << '\n';
+    std::cout << "pi    : ";
+    for (m = 0; m < N; ++m) {
+      std::cout << std::setw(2) << pi[idx[m]] << ' ';
+    }
+    std::cout << '\n';
+    std::cout << "lambda: ";
+    for (m = 0; m < N; ++m) {
+      std::cout << std::setw(2) << lambda[idx[m]] << ' ';
+    }
+    std::cout << '\n';
+  }
 
   return 0;
 }
