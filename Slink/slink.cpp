@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
         double nj = doc(n, j).getNumeric();
         M[i] += (ij - nj) * (ij - nj);
       }
+      M[i] = std::sqrt(M[i]);
     }
 
 #ifdef DEBUG
@@ -230,44 +231,31 @@ int main(int argc, char *argv[]) {
   std::cout << "Result     :\n";
 
 #ifdef DEBUG
-  std::cout << '\n';
-  std::cout << "Sorted:\n";
-  size_t is[N];
-  std::iota(is, is + N, 0);
   size_t resPerLine = 10;
-
-  i = 0;
-  do {
-    print(is + i, std::min(resPerLine, N - i), "m", 8);
-    print(idx + i, std::min(resPerLine, N - i), "i", 8);
-    printIdx(pi + i, std::min(resPerLine, N - i), "pi", idx + i);
-    printIdx(lambda + i, std::min(resPerLine, N - i), "lambda", idx + i);
-    i += resPerLine;
-  } while (i < N);
-#endif
-  if (false) {
+  for (i = 0; i < N; i += resPerLine) {
     size_t m;
-    std::cout << "\ni     : ";
-    for (m = 0; m < N; ++m) {
-      std::cout << std::setw(2) << m << ' ';
+    std::cout << "\nm     : ";
+    for (m = i; m < std::min(i + resPerLine, N); ++m) {
+      std::cout << std::setw(WIDTH) << m << ' ';
     }
     std::cout << '\n';
-    std::cout << "idx   : ";
-    for (m = 0; m < N; ++m) {
-      std::cout << std::setw(2) << idx[m] << ' ';
+    std::cout << "i     : ";
+    for (m = i; m < std::min(i + resPerLine, N); ++m) {
+      std::cout << std::setw(WIDTH) << idx[m] << ' ';
     }
     std::cout << '\n';
     std::cout << "pi    : ";
-    for (m = 0; m < N; ++m) {
-      std::cout << std::setw(2) << pi[idx[m]] << ' ';
+    for (m = i; m < std::min(i + resPerLine, N); ++m) {
+      std::cout << std::setw(WIDTH) << pi[idx[m]] << ' ';
     }
     std::cout << '\n';
     std::cout << "lambda: ";
-    for (m = 0; m < N; ++m) {
-      std::cout << std::setw(2) << lambda[idx[m]] << ' ';
+    for (m = i; m < std::min(i + resPerLine, N); ++m) {
+      std::cout << std::setw(WIDTH) << lambda[idx[m]] << ' ';
     }
     std::cout << '\n';
   }
+#endif
 
   return 0;
 }
