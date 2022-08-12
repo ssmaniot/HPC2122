@@ -1,79 +1,15 @@
-#include <assert.h>
-
-#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <memory>
-#include <random>
-#include <vector>
+#include <numeric>
 
 #include "CSV.hpp"
-#include "MappedData.hpp"
 
 constexpr size_t PRECISION = 2;
 constexpr size_t WIDTH = 9;
-
-class DistanceMatrix {
- public:
-  DistanceMatrix(size_t n) : m_Data((n + 1) * (n + 1)), m_shape{n} {
-    for (size_t i = 0; i < n + 1; ++i) {
-      m_Data[i * (n + 1) + n] = std::numeric_limits<double>::max();
-      m_Data[n * (n + 1) + i] = std::numeric_limits<double>::max();
-    }
-  }
-
-  double &operator()(size_t i, size_t j) {
-    // assert(i < n + 1 || j < n + 1);
-    return m_Data[i * (m_shape + 1) + j];
-  }
-
-  const double &operator()(size_t i, size_t j) const {
-    assert(i < m_shape + 1 || j < m_shape + 1);
-    return m_Data[i * (m_shape + 1) + j];
-  }
-
-  size_t rows() const { return m_shape; }
-  size_t cols() const { return m_shape; }
-
- private:
-  std::vector<double> m_Data;
-  size_t m_shape;
-};
-
-template <class T>
-void print(T arr[], size_t n, std::string name, size_t padding = 8,
-           bool off = false) {
-  std::cout << std::setw(padding) << name << ": ";
-  for (size_t i = 0; i < n; ++i) {
-    if (arr[i] == std::numeric_limits<T>::max()) {
-      std::cout << std::setw(WIDTH) << "Inf" << ' ';
-    } else {
-      T val = (off ? *(arr + i) + T{1} : arr[i]);
-      std::cout << std::setw(WIDTH) << val << ' ';
-    }
-  }
-  std::cout << '\n';
-}
-
-template <class T>
-void printIdx(T arr[], size_t n, std::string name, size_t idx[],
-              size_t padding = 8, bool off = false) {
-  std::cout << std::setw(padding) << name << ": ";
-  for (size_t i = 0; i < n; ++i) {
-    // std::cout << "Printing index " << idx[i] << '\n';
-    if (arr[idx[i]] == std::numeric_limits<T>::max()) {
-      std::cout << std::setw(WIDTH) << "Inf" << ' ';
-    } else {
-      T val = (off ? arr[idx[i]] + T{1} : arr[idx[i]]);
-      std::cout << std::setw(WIDTH) << val << ' ';
-    }
-  }
-  std::cout << '\n';
-}
 
 // Main program
 
