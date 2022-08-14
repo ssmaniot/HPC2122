@@ -74,6 +74,16 @@ int main(int argc, char *argv[]) {
   std::cout << '\n';
   std::cout << "Done.\n";
 
+  std::cout << "Copying data to array...\n";
+  double *data = static_cast<double *>(std::malloc(sizeof(double) * N * P));
+#pragma omp parallel for
+  for (i = 0; i < N; ++i) {
+    for (j = 0; j < P; ++j) {
+      data[i * P + j] = doc(i, numericIndexes[j]).getNumeric();
+    }
+  }
+  std::cout << "Done.\n";
+
   // init chrono
   std::cout << "Begin clustering... (size n = " << N << ")\n";
   auto begin = std::chrono::high_resolution_clock::now();
@@ -109,8 +119,8 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < n; ++i) {
       M[i] = 0;
       for (const auto j : numericIndexes) {
-        double ij = doc(i, j).getNumeric();
-        double nj = doc(n, j).getNumeric();
+        double ij = data[i * P + j];
+        double nj = data[n * P + j];
         M[i] += (ij - nj) * (ij - nj);
       }
       M[i] = std::sqrt(M[i]);
@@ -150,6 +160,9 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  // Releasing data
+  std::free(data);
 
   size_t idx[N];
   std::iota(&idx[0], &idx[N], 0);
