@@ -164,9 +164,9 @@ int main(int argc, char *argv[]) {
   // some nice output
   std::cout << "\rDone.                            \n";
   std::cout << "Time       : " << elapsed.count() << "ms.\n";
+#ifdef DEBUG
   std::cout << "Result     :\n";
 
-#ifdef DEBUG
   size_t resPerLine = 10;
   for (i = 0; i < N; i += resPerLine) {
     size_t m;
@@ -187,7 +187,11 @@ int main(int argc, char *argv[]) {
     std::cout << '\n';
     std::cout << "lambda: ";
     for (m = i; m < std::min(i + resPerLine, N); ++m) {
-      std::cout << std::setw(WIDTH) << lambda[idx[m]] << ' ';
+      std::cout << std::setw(WIDTH)
+                << (lambda[idx[m]] == std::numeric_limits<double>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[idx[m]]))
+                << ' ';
     }
     std::cout << '\n';
   }
