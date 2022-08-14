@@ -28,7 +28,7 @@ class CSV::Impl {
     m_fileName = fileName;
     m_separator = separator;
 
-    std::ifstream str(m_fileName);
+    std::ifstream str{m_fileName};
     std::string line;
 
     if (!std::getline(str, line)) {
