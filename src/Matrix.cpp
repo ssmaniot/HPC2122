@@ -76,7 +76,7 @@ class Matrix<T>::Impl {
     return data_->operator[](row* cols_ + col);
   }
 
-  using iterator = std::vector<T>::iterator;
+  using iterator = typename std::vector<T>::iterator;
 
   iterator begin() { return data_->begin(); }
 

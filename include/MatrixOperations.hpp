@@ -15,7 +15,7 @@ struct OpTraits {
 }  // namespace
 
 template <class T, class U>
-std::enable_if_t<std::is_floating_point_v<typename OpTraits<T, U>::mul>,
+std::enable_if_t<std::is_floating_point<typename OpTraits<T, U>::mul>::value,
                  Matrix<typename OpTraits<T, U>::mul>>
 operator*(Matrix<T>&& lhs, Matrix<U>&& rhs) {
   assert(lhs.cols() == rhs.rows());
@@ -32,7 +32,7 @@ operator*(Matrix<T>&& lhs, Matrix<U>&& rhs) {
 }
 
 template <class T, class U>
-std::enable_if_t<std::is_floating_point_v<typename OpTraits<T, U>::mul>,
+std::enable_if_t<std::is_floating_point<typename OpTraits<T, U>::mul>::value,
                  Matrix<typename OpTraits<T, U>::mul>>
 operator*(const Matrix<T>& lhs, Matrix<U>&& rhs) {
   assert(lhs.cols() == rhs.rows());
@@ -49,7 +49,7 @@ operator*(const Matrix<T>& lhs, Matrix<U>&& rhs) {
 }
 
 template <class T, class U>
-std::enable_if_t<std::is_floating_point_v<typename OpTraits<T, U>::mul>,
+std::enable_if_t<std::is_floating_point<typename OpTraits<T, U>::mul>::value,
                  Matrix<typename OpTraits<T, U>::mul>>
 operator*(Matrix<T>&& lhs, const Matrix<U>& rhs) {
   assert(lhs.cols() == rhs.rows());
@@ -66,7 +66,7 @@ operator*(Matrix<T>&& lhs, const Matrix<U>& rhs) {
 }
 
 template <class T, class U>
-std::enable_if_t<std::is_floating_point_v<typename OpTraits<T, U>::mul>,
+std::enable_if_t<std::is_floating_point<typename OpTraits<T, U>::mul>::value,
                  Matrix<typename OpTraits<T, U>::mul>>
 operator*(const Matrix<T>& lhs, const Matrix<U>& rhs) {
   assert(lhs.cols() == rhs.rows());

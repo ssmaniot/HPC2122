@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace CSV {
@@ -13,9 +14,9 @@ class CellProxy {
             size_t column)
       : m_data{data}, m_dataType{dataType}, m_row{row}, m_col{column} {}
 
-  double getNumeric() const;
+  float getNumeric() const;
 
-  std::string getString() const { return m_data; }
+  const std::string& getString() const { return m_data; }
 
  private:
   const std::string& m_data;

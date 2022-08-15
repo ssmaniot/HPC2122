@@ -1,5 +1,6 @@
 #include "CSV.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -138,7 +139,7 @@ class CSV::Impl {
    */
   std::string computeDataType(const std::string& token) const {
     std::istringstream iss(token);
-    double d;
+    float d;
     iss >> std::noskipws >> d;
     return (iss.eof() && !iss.fail()) ? "Numeric" : "String";
   }
@@ -212,7 +213,7 @@ const std::vector<std::string>& CSV::getDataTypes() const {
 
 // CellProxy
 
-double CellProxy::getNumeric() const {
+float CellProxy::getNumeric() const {
   if (m_dataType != "Numeric") {
     throw std::runtime_error(
         "on row " + std::to_string(m_row) + ", column " +
@@ -221,7 +222,7 @@ double CellProxy::getNumeric() const {
         "value");
   }
   std::istringstream iss(m_data);
-  double d;
+  float d;
   iss >> std::noskipws >> d;
   return d;
 }
