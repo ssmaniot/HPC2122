@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -7,6 +8,7 @@
 #include <numeric>
 
 #include "CSV.hpp"
+#include "xmmintrin.h"
 
 constexpr size_t PRECISION = 2;
 constexpr size_t WIDTH = 9;
@@ -47,9 +49,9 @@ int main(int argc, char *argv[]) {
               << "\" is not in header.\n";
     return 1;
   }
-  std::cout << "Header:";
+  std::cout << "Header: |";
   for (const auto &s : header) {
-    std::cout << ' ' << s;
+    std::cout << ' ' << s << " |";
   }
   std::cout << '\n';
 
@@ -74,8 +76,10 @@ int main(int argc, char *argv[]) {
   std::cout << '\n';
   std::cout << "Done.\n";
 
+  // Saving data to aligned array
   std::cout << "Copying data to array...\n";
-  double *data = static_cast<double *>(std::malloc(sizeof(double) * N * P));
+  float *data = static_cast<float *>(std::malloc(N * P * sizeof(float)));
+  // static_cast<float *>(_mm_malloc(N * P * sizeof(float), sizeof(float *)));
 #pragma omp parallel for
   for (i = 0; i < N; ++i) {
     for (j = 0; j < P; ++j) {
@@ -89,11 +93,11 @@ int main(int argc, char *argv[]) {
   auto begin = std::chrono::high_resolution_clock::now();
 
   size_t pi[N + 1];
-  double lambda[N + 1];
-  double M[N];
+  float lambda[N + 1];
+  float M[N];
 
   pi[0] = 0;
-  lambda[0] = std::numeric_limits<double>::max();
+  lambda[0] = std::numeric_limits<float>::max();
 
 #ifdef DEBUG
   std::cout << "Processing n=" << 0 << '\n';
@@ -104,7 +108,7 @@ int main(int argc, char *argv[]) {
   // Algorithm main loop
   for (n = 1; n < N; ++n) {
     // std::cout << "\rCurrent step: " << n << "/" << N << " ("
-    //           << std::ceil(10000. * static_cast<double>(n) / N) / 100.
+    //           << std::ceil(10000. * static_cast<float>(n) / N) / 100.
     //           << "%)  ";
 #ifdef DEBUG
     std::cout << "Processing n=" << n << '\n';
@@ -113,14 +117,14 @@ int main(int argc, char *argv[]) {
 
     // Initialization
     pi[n] = n;
-    lambda[n] = std::numeric_limits<double>::max();
+    lambda[n] = std::numeric_limits<float>::max();
 
 #pragma omp parallel for
     for (i = 0; i < n; ++i) {
       M[i] = 0;
-      for (const auto j : numericIndexes) {
-        double ij = data[i * P + j];
-        double nj = data[n * P + j];
+      for (j = 0; j < P; ++j) {
+        float ij = data[i * P + j];
+        float nj = data[n * P + j];
         M[i] += (ij - nj) * (ij - nj);
       }
       M[i] = std::sqrt(M[i]);
@@ -163,6 +167,7 @@ int main(int argc, char *argv[]) {
 
   // Releasing data
   std::free(data);
+  // _mm_free(data);
 
   size_t idx[N];
   std::iota(&idx[0], &idx[N], 0);
@@ -201,7 +206,7 @@ int main(int argc, char *argv[]) {
     std::cout << "lambda: ";
     for (m = i; m < std::min(i + resPerLine, N); ++m) {
       std::cout << std::setw(WIDTH)
-                << (lambda[idx[m]] == std::numeric_limits<double>::max()
+                << (lambda[idx[m]] == std::numeric_limits<float>::max()
                         ? "Inf"
                         : std::to_string(lambda[idx[m]]))
                 << ' ';
