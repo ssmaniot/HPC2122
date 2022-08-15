@@ -1,4 +1,4 @@
-# Parallel Slink
+# HPC Lab Project: Single Linkage Hierarchical Clustering
 Repository for the final project of the course "High Perfomance Computing" [CM0227] held by Prof. Claudio Lucchese
 at Ca' Foscari University of Venice during the first semester of the academic year 2021/2022.
 
