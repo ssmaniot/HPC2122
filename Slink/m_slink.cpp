@@ -39,9 +39,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::cout << "Document has " << doc.rows() << " rows and " << doc.cols()
-            << " columns.\n";
-
   auto header = doc.getHeader();
   if (groupFeatureSpecified && std::find(std::begin(header), std::end(header),
                                          groupFeature) == std::end(header)) {
@@ -49,11 +46,6 @@ int main(int argc, char *argv[]) {
               << "\" is not in header.\n";
     return 1;
   }
-  std::cout << "Header: |";
-  for (const auto &s : header) {
-    std::cout << ' ' << s << " |";
-  }
-  std::cout << '\n';
 
   auto dataTypes = doc.getDataTypes();
   size_t N = doc.rows();
@@ -66,52 +58,55 @@ int main(int argc, char *argv[]) {
   }
   size_t P = numericIndexes.size();
 
-  std::cout << "Dataset with n = " << N << " elements, p = " << P << ".\n";
-  std::cout << "Variables with \"String\" data type:";
-  for (i = 0; i < header.size(); ++i) {
-    if (dataTypes[i] == "String") {
-      std::cout << ' ' << header[i];
-    }
-  }
-  std::cout << '\n';
-  std::cout << "Done.\n";
-
   // Saving data to aligned array
-  std::cout << "Copying data to array...\n";
-  float *data = static_cast<float *>(std::malloc(N * P * sizeof(float)));
-  // static_cast<float *>(_mm_malloc(N * P * sizeof(float), sizeof(float *)));
+  // float *data = static_cast<float *>(std::malloc(N * P * sizeof(float)));
+  float *data =
+      static_cast<float *>(_mm_malloc(N * P * sizeof(float), sizeof(float *)));
+  if (data == nullptr) {
+    std::cerr << "Could not allocate memory for data.\n";
+    return 1;
+  }
+
 #pragma omp parallel for
   for (i = 0; i < N; ++i) {
     for (j = 0; j < P; ++j) {
       data[i * P + j] = doc(i, numericIndexes[j]).getNumeric();
     }
   }
-  std::cout << "Done.\n";
+
+  // size_t pi[N + 1];
+  // float lambda[N + 1];
+  // float M[N];
+  size_t *pi = static_cast<size_t *>(
+      _mm_malloc((N + 1) * sizeof(size_t), sizeof(size_t *)));
+  float *lambda = static_cast<float *>(
+      _mm_malloc((N + 1) * sizeof(float), sizeof(float *)));
+  float *M =
+      static_cast<float *>(_mm_malloc(N * sizeof(float), sizeof(float *)));
+
+  if ((pi == nullptr) || (lambda == nullptr) || (M == nullptr)) {
+    _mm_free(data);
+    if (pi) {
+      _mm_free(pi);
+    }
+    if (lambda) {
+      _mm_free(lambda);
+    }
+    if (M) {
+      _mm_free(M);
+    }
+    std::cerr << "Could not allocate memory for slink data structures.\n";
+    return 1;
+  }
 
   // init chrono
   std::cout << "Begin clustering... (size n = " << N << ")\n";
   auto begin = std::chrono::high_resolution_clock::now();
 
-  size_t pi[N + 1];
-  float lambda[N + 1];
-  float M[N];
-
   pi[0] = 0;
   lambda[0] = std::numeric_limits<float>::max();
-
-#ifdef DEBUG
-  std::cout << "Processing n=" << 0 << '\n';
-  std::cout << "  Init:\n";
-  std::cout << '\n';
-#endif
-
   // Algorithm main loop
   for (n = 1; n < N; ++n) {
-#ifdef DEBUG
-    std::cout << "Processing n=" << n << '\n';
-    std::cout << "  Init:\n";
-#endif
-
     // Initialization
     pi[n] = n;
     lambda[n] = std::numeric_limits<float>::max();
@@ -127,17 +122,9 @@ int main(int argc, char *argv[]) {
       M[i] = std::sqrt(M[i]);
     }
 
-#ifdef DEBUG
-    std::cout << "  Update:\n";
-#endif
-
     // Update
     // #pragma omp parallel for
     for (i = 0; i < n; ++i) {
-#ifdef DEBUG
-      std::cout << "    lambda[" << i << "] >= M[" << i << "] ? "
-                << (lambda[n] >= M[n]) << '\n';
-#endif
       if (lambda[i] >= M[i]) {
         M[pi[i]] = std::min(M[pi[i]], lambda[i]);
         lambda[i] = M[i];
@@ -147,26 +134,14 @@ int main(int argc, char *argv[]) {
       }
     }
 
-#ifdef DEBUG
-    std::cout << "  Update status:\n";
-#endif
-
 // Update status:
 #pragma omp parallel for
     for (i = 0; i < n; ++i) {
-#ifdef DEBUG
-      std::cout << "    lambda[" << i << "] >= lambda[pi[" << i << "]] ? "
-                << (lambda[i] >= lambda[pi[i]]) << '\n';
-#endif
       if (lambda[i] >= lambda[pi[i]]) {
         pi[i] = n;
       }
     }
   }
-
-  // Releasing data
-  std::free(data);
-  // _mm_free(data);
 
   size_t idx[N];
   std::iota(&idx[0], &idx[N], 0);
@@ -182,39 +157,12 @@ int main(int argc, char *argv[]) {
   std::cout << "\rDone.                            \n";
   std::cout << "Time       : " << elapsed.count() << "ms.\n";
 
-#ifdef DEBUG_OUT
-  std::cout << "Result     :\n";
-
-  size_t resPerLine = 10;
-  for (i = 0; i < N; i += resPerLine) {
-    size_t m;
-    std::cout << "\nm     : ";
-    for (m = i; m < std::min(i + resPerLine, N); ++m) {
-      std::cout << std::setw(WIDTH) << m << ' ';
-    }
-    std::cout << '\n';
-    std::cout << "i     : ";
-    for (m = i; m < std::min(i + resPerLine, N); ++m) {
-      std::cout << std::setw(WIDTH) << idx[m] << ' ';
-    }
-    std::cout << '\n';
-    std::cout << "pi    : ";
-    for (m = i; m < std::min(i + resPerLine, N); ++m) {
-      std::cout << std::setw(WIDTH) << pi[idx[m]] << ' ';
-    }
-    std::cout << '\n';
-    std::cout << "lambda: ";
-    for (m = i; m < std::min(i + resPerLine, N); ++m) {
-      if (lambda[idx[m]] == std::numeric_limits<float>::max()) {
-        std::cout << std::setw(WIDTH) << "Inf";
-      } else {
-        std::cout << std::setw(WIDTH) << lambda[idx[m]];
-      }
-      std::cout << ' ';
-    }
-    std::cout << '\n';
-  }
-#endif
+  // Releasing resources
+  // std::free(data);
+  _mm_free(data);
+  _mm_free(pi);
+  _mm_free(lambda);
+  _mm_free(M);
 
   return 0;
 }
