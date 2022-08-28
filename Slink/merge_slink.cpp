@@ -282,12 +282,14 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    std::cout << "lambda[" << i << "](" << lambda[i] << ") >= M[" << minIdx
+              << "](" << M[minIdx] << ") ? " << (lambda[i] >= M[minIdx])
+              << '\n';
     if (lambda[i] >= M[minIdx]) {
       lambda[i] = M[minIdx];
       pi[i] = minIdx;
     }
   }
-
   // ! End of implementation
 
   std::sort(&idx[0], &idx[N],
