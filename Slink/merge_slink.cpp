@@ -113,65 +113,6 @@ int main(int argc, char *argv[]) {
 
   pi[0] = 0;
   lambda[0] = std::numeric_limits<float>::max();
-  // Algorithm main loop
-  for (n = 1; n < N; ++n) {
-    // Initialization
-    pi[n] = n;
-    lambda[n] = std::numeric_limits<float>::max();
-
-#pragma omp parallel for
-    for (i = 0; i < n; ++i) {
-      M[i] = 0;
-      for (j = 0; j < P; ++j) {
-        float ij = data[i * P + j];
-        float nj = data[n * P + j];
-        M[i] += (ij - nj) * (ij - nj);
-      }
-      M[i] = std::sqrt(M[i]);
-    }
-
-    // Update
-    // #pragma omp parallel for
-    for (i = 0; i < n; ++i) {
-      if (lambda[i] >= M[i]) {
-        M[pi[i]] = std::min(M[pi[i]], lambda[i]);
-        lambda[i] = M[i];
-        pi[i] = n;
-      } else {
-        M[pi[i]] = std::min(M[pi[i]], M[i]);
-      }
-    }
-
-    // Update status:
-    for (i = 0; i < n; ++i) {
-      if (lambda[i] >= lambda[pi[i]]) {
-        pi[i] = n;
-      }
-    }
-  }
-
-  size_t idx[N];
-  std::iota(&idx[0], &idx[N], 0);
-  std::sort(&idx[0], &idx[N],
-            [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
-
-  // end timing
-  auto end = std::chrono::high_resolution_clock::now();
-  auto elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-
-  // some nice output
-  std::cout << "\rDone.                            \n";
-  std::cout << "Time       : " << elapsed.count() << "ms.\n";
-
-  // PART 2
-
-  // init chrono
-  std::cout << "Begin clustering 2... (size n = " << N << ")\n";
-  begin = std::chrono::high_resolution_clock::now();
-
-  pi[0] = 0;
-  lambda[0] = std::numeric_limits<float>::max();
 
 #ifdef DEBUG
   std::cout << "Processing n=" << 0 << '\n';
@@ -238,21 +179,22 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::iota(&idx[0], &idx[N / 2], 0);
+  size_t idx[N];
+  std::iota(&idx[0], &idx[N], 0);
   std::sort(&idx[0], &idx[N / 2],
             [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
 
-  pi[N / 2] = 0;
+  pi[N / 2] = N / 2;
   lambda[N / 2] = std::numeric_limits<float>::max();
 
   // Algorithm main loop 2
-  for (n = n / 2; n < N; ++n) {
+  for (n = n / 2 + 1; n < N; ++n) {
     // Initialization
     pi[n] = n;
     lambda[n] = std::numeric_limits<float>::max();
 
 #pragma omp parallel for
-    for (i = N / 2 + 1; i < n; ++i) {
+    for (i = N / 2; i < n; ++i) {
       M[i] = 0;
       for (j = 0; j < P; ++j) {
         float ij = data[i * P + j];
@@ -282,13 +224,14 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::iota(&idx[N / 2], &idx[N], N / 2);
+  // std::iota(&idx[N / 2], &idx[N], N / 2);
   std::sort(&idx[N / 2], &idx[N],
             [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
 
   // end timing
-  end = std::chrono::high_resolution_clock::now();
-  elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
   // some nice output
   std::cout << "\rDone.                            \n";
