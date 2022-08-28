@@ -24,7 +24,7 @@ float *M = nullptr;
 
 // Main program
 int main(int argc, char *argv[]) {
-  size_t i, j, k, n;
+  int i, j, k, n;
 
   CSV::CSV doc;
 
@@ -224,8 +224,77 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // std::iota(&idx[N / 2], &idx[N], N / 2);
   std::sort(&idx[N / 2], &idx[N],
+            [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
+
+#ifdef DEBUG_OUT
+  std::cout << "Two clusters done, result:\n";
+  {
+    size_t resPerLine = 10;
+    for (i = 0; i < N; i += resPerLine) {
+      size_t m;
+      std::cout << "\nm     : ";
+      for (m = i; m < std::min(i + resPerLine, N); ++m) {
+        std::cout << std::setw(WIDTH) << m << ' ';
+      }
+      std::cout << '\n';
+      std::cout << "i     : ";
+      for (m = i; m < std::min(i + resPerLine, N); ++m) {
+        std::cout << std::setw(WIDTH) << idx[m] << ' ';
+      }
+      std::cout << '\n';
+      std::cout << "pi    : ";
+      for (m = i; m < std::min(i + resPerLine, N); ++m) {
+        std::cout << std::setw(WIDTH) << pi[idx[m]] << ' ';
+      }
+      std::cout << '\n';
+      std::cout << "lambda: ";
+      for (m = i; m < std::min(i + resPerLine, N); ++m) {
+        if (lambda[idx[m]] == std::numeric_limits<float>::max()) {
+          std::cout << std::setw(WIDTH) << "Inf";
+        } else {
+          std::cout << std::setw(WIDTH) << lambda[idx[m]];
+        }
+        std::cout << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+#endif
+
+  // TODO: implementation of merge
+  // ! Implementation of merge
+
+  if (true) {
+    for (i = N / 2 - 1; i >= 0; --i) {
+      // Find minimum distance
+      for (n = N / 2; n < N; ++n) {
+        M[n] = 0;
+        for (j = 0; j < P; ++j) {
+          float ij = data[i * P + j];
+          float nj = data[n * P + j];
+          M[n] += (ij - nj) * (ij - nj);
+        }
+        M[n] = std::sqrt(M[n]);
+      }
+
+      size_t minIdx = N / 2;
+      for (n = N / 2 + 1; n < N; ++n) {
+        if (M[n] < M[minIdx]) {
+          minIdx = n;
+        }
+      }
+
+      if (lambda[i] >= M[minIdx]) {
+        lambda[i] = M[minIdx];
+        pi[i] = minIdx;
+      }
+    }
+  }
+
+  // ! End of implementation
+
+  std::sort(&idx[0], &idx[N],
             [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
 
   // end timing
