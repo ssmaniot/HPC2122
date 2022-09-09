@@ -8,7 +8,7 @@
 #include <numeric>
 
 #include "CSV.hpp"
-#include "xmmintrin.h"
+#include "pmmintrin.h"
 
 namespace {
 
@@ -24,7 +24,7 @@ float *M = nullptr;
 
 // Main program
 int main(int argc, char *argv[]) {
-  int i, j, k, n;
+  size_t i, j, k, n;
 
   CSV::CSV doc;
 
@@ -71,18 +71,27 @@ int main(int argc, char *argv[]) {
   }
   size_t P = numericIndexes.size();
 
+  // Computing padding for 16-bit alignment
+  size_t padding = (16 - (P % 16)) % 16;
+  size_t paddedSize = P + padding;
+  // exit(0);
+
   // Saving data to aligned array
-  data =
-      static_cast<float *>(_mm_malloc(N * P * sizeof(float), sizeof(float *)));
+  data = static_cast<float *>(
+      _mm_malloc(N * paddedSize * sizeof(float), sizeof(float *)));
   if (data == nullptr) {
     std::cerr << "Could not allocate memory for data.\n";
     return 1;
   }
 
-  // #pragma omp parallel for
+#pragma omp parallel for num_threads(12)
   for (i = 0; i < N; ++i) {
+    int j;
     for (j = 0; j < P; ++j) {
-      data[i * P + j] = doc(i, numericIndexes[j]).getNumeric();
+      data[i * paddedSize + j] = doc(i, numericIndexes[j]).getNumeric();
+    }
+    for (; j < paddedSize; ++j) {
+      data[i * paddedSize + j] = 0.f;
     }
   }
 
@@ -113,187 +122,117 @@ int main(int argc, char *argv[]) {
 
   pi[0] = 0;
   lambda[0] = std::numeric_limits<float>::max();
-
+  // Algorithm main loop
+  for (n = 1; n < N; ++n) {
+// Initialization
 #ifdef DEBUG
-  std::cout << "Processing n=" << 0 << '\n';
-  std::cout << "  Init:\n";
-  std::cout << '\n';
+    std::cout << "Loop on item " << n << '\n';
 #endif
-
-  // Algorithm main loop 1
-  for (n = 1; n < N / 2; ++n) {
-#ifdef DEBUG
-    std::cout << "Processing n=" << n << '\n';
-    std::cout << "  Init:\n";
-#endif
-
-    // Initialization
     pi[n] = n;
     lambda[n] = std::numeric_limits<float>::max();
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(12)
     for (i = 0; i < n; ++i) {
-      M[i] = 0;
-      for (j = 0; j < P; ++j) {
-        float ij = data[i * P + j];
-        float nj = data[n * P + j];
-        M[i] += (ij - nj) * (ij - nj);
+      __m128 vd2 = _mm_set1_ps(0.f);
+      M[i] = 0.f;
+      // process 4 elements per iteration
+      for (j = 0; j < P; j += 4) {
+        __m128 va = _mm_load_ps(&data[i * paddedSize + j]);
+        __m128 vb = _mm_load_ps(&data[n * paddedSize + j]);
+        __m128 vd = _mm_sub_ps(va, vb);
+        vd = _mm_mul_ps(vd, vd);
+        vd2 = _mm_add_ps(vd2, vd);
+      }
+      // horizontal sum of 4 partial dot products
+      vd2 = _mm_hadd_ps(vd2, vd2);
+      vd2 = _mm_hadd_ps(vd2, vd2);
+      _mm_store_ss(&M[i], vd2);
+
+      // clean up any remaining elements
+      for (; j < P; ++j) {
+        float d = data[i * paddedSize + j] - data[n * paddedSize + j];
+        M[i] += d * d;
       }
       M[i] = std::sqrt(M[i]);
-    }
-
 #ifdef DEBUG
-    std::cout << "  Update:\n";
+      std::cout << "    M[" << i << "] = " << M[i] << '\n';
 #endif
+    }
+    // std::cout << '\n';
 
     // Update
-    // #pragma omp parallel for
     for (i = 0; i < n; ++i) {
 #ifdef DEBUG
-      std::cout << "    lambda[" << i << "](" << lambda[i] << ") >= M[" << i
-                << "](" << M[i] << ") ? " << (lambda[n] >= M[n]) << '\n';
+      std::cout << "    lambda[" << i << "](" << std::setw(3)
+                << (lambda[i] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[i]))
+                << ") >= M[" << i << "](" << std::setw(3) << M[i] << ") ? "
+                << std::to_string(lambda[i] >= M[i]);
 #endif
       if (lambda[i] >= M[i]) {
+#ifdef DEBUG
+        std::cout << " => M[pi[" << i << "]](M[" << pi[i] << "]) = min(M[pi["
+                  << i << "]](" << std::setw(3) << M[pi[i]] << "), lambda[" << i
+                  << "](" << std::setw(3)
+                  << (lambda[i] == std::numeric_limits<float>::max()
+                          ? "Inf"
+                          : std::to_string(lambda[i]))
+                  << ")), lambda[" << i << "] = M[" << i << "](" << std::setw(3)
+                  << M[i] << "), pi[" << i << "] = " << n;
+#endif
         M[pi[i]] = std::min(M[pi[i]], lambda[i]);
         lambda[i] = M[i];
         pi[i] = n;
       } else {
+#ifdef DEBUG
+        std::cout << " => M[pi[" << i << "]](M[" << pi[i] << "]) = min(M[pi["
+                  << i << "]](" << std::setw(3) << M[pi[i]] << "), M[" << i
+                  << "](" << std::setw(3) << M[i] << "))";
+#endif
         M[pi[i]] = std::min(M[pi[i]], M[i]);
       }
+#ifdef DEBUG
+      std::cout << '\n';
+#endif
     }
 
+// Update status:
 #ifdef DEBUG
     std::cout << "  Update status:\n";
 #endif
 
-    // Update status:
+    // #pragma omp parallel for num_threads(12)
     for (i = 0; i < n; ++i) {
 #ifdef DEBUG
-      std::cout << "    lambda[" << i << "](" << lambda[i] << ") >= lambda[pi["
-                << i << "]](" << lambda[pi[i]] << ") ? "
-                << (lambda[i] >= lambda[pi[i]]) << '\n';
+      std::cout << "    lambda[" + std::to_string(i) + "]("
+                << (lambda[i] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[i])) +
+                       ") >= lambda[pi["
+                << i << "]](" << std::setw(3)
+                << (lambda[pi[i]] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[pi[i]]))
+                << ") ? " << std::to_string(lambda[i] >= lambda[pi[i]]);
 #endif
       if (lambda[i] >= lambda[pi[i]]) {
+#ifdef DEBUG
+        std::cout << " => pi[" << i << "] = " << n;
+#endif
         pi[i] = n;
       }
+#ifdef DEBUG
+      std::cout << '\n';
+#endif
     }
+#ifdef DEBUG
+    std::cout << '\n';
+#endif
   }
 
   size_t idx[N];
   std::iota(&idx[0], &idx[N], 0);
-  std::sort(&idx[0], &idx[N / 2],
-            [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
-
-  pi[N / 2] = N / 2;
-  lambda[N / 2] = std::numeric_limits<float>::max();
-
-  // Algorithm main loop 2
-  for (n = n / 2 + 1; n < N; ++n) {
-    // Initialization
-    pi[n] = n;
-    lambda[n] = std::numeric_limits<float>::max();
-
-#pragma omp parallel for
-    for (i = N / 2; i < n; ++i) {
-      M[i] = 0;
-      for (j = 0; j < P; ++j) {
-        float ij = data[i * P + j];
-        float nj = data[n * P + j];
-        M[i] += (ij - nj) * (ij - nj);
-      }
-      M[i] = std::sqrt(M[i]);
-    }
-
-// Update
-#pragma omp parallel for
-    for (i = N / 2; i < n; ++i) {
-      if (lambda[i] >= M[i]) {
-        M[pi[i]] = std::min(M[pi[i]], lambda[i]);
-        lambda[i] = M[i];
-        pi[i] = n;
-      } else {
-        M[pi[i]] = std::min(M[pi[i]], M[i]);
-      }
-    }
-
-    // Update status:
-    for (i = N / 2; i < n; ++i) {
-      if (lambda[i] >= lambda[pi[i]]) {
-        pi[i] = n;
-      }
-    }
-  }
-
-  std::sort(&idx[N / 2], &idx[N],
-            [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
-
-#ifdef DEBUG_OUT
-  std::cout << "Two clusters done, result:\n";
-  {
-    size_t resPerLine = 10;
-    for (i = 0; i < N; i += resPerLine) {
-      size_t m;
-      std::cout << "\nm     : ";
-      for (m = i; m < std::min(i + resPerLine, N); ++m) {
-        std::cout << std::setw(WIDTH) << m << ' ';
-      }
-      std::cout << '\n';
-      std::cout << "i     : ";
-      for (m = i; m < std::min(i + resPerLine, N); ++m) {
-        std::cout << std::setw(WIDTH) << idx[m] << ' ';
-      }
-      std::cout << '\n';
-      std::cout << "pi    : ";
-      for (m = i; m < std::min(i + resPerLine, N); ++m) {
-        std::cout << std::setw(WIDTH) << pi[idx[m]] << ' ';
-      }
-      std::cout << '\n';
-      std::cout << "lambda: ";
-      for (m = i; m < std::min(i + resPerLine, N); ++m) {
-        if (lambda[idx[m]] == std::numeric_limits<float>::max()) {
-          std::cout << std::setw(WIDTH) << "Inf";
-        } else {
-          std::cout << std::setw(WIDTH) << lambda[idx[m]];
-        }
-        std::cout << ' ';
-      }
-      std::cout << '\n';
-    }
-  }
-#endif
-
-  // TODO: implementation of merge
-  // ! Implementation of merge
-
-  if (true) {
-    for (i = N / 2 - 1; i >= 0; --i) {
-      // Find minimum distance
-      for (n = N / 2; n < N; ++n) {
-        M[n] = 0;
-        for (j = 0; j < P; ++j) {
-          float ij = data[i * P + j];
-          float nj = data[n * P + j];
-          M[n] += (ij - nj) * (ij - nj);
-        }
-        M[n] = std::sqrt(M[n]);
-      }
-
-      size_t minIdx = N / 2;
-      for (n = N / 2 + 1; n < N; ++n) {
-        if (M[n] < M[minIdx]) {
-          minIdx = n;
-        }
-      }
-
-      if (lambda[i] >= M[minIdx]) {
-        lambda[i] = M[minIdx];
-        pi[i] = minIdx;
-      }
-    }
-  }
-
-  // ! End of implementation
-
   std::sort(&idx[0], &idx[N],
             [](size_t a, size_t b) { return lambda[a] < lambda[b]; });
 
@@ -303,7 +242,7 @@ int main(int argc, char *argv[]) {
       std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
   // some nice output
-  std::cout << "\rDone.                            \n";
+  std::cout << "Done.\n";
   std::cout << "Time       : " << elapsed.count() << "ms.\n";
 
 #ifdef DEBUG_OUT

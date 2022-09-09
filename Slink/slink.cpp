@@ -115,11 +115,14 @@ int main(int argc, char *argv[]) {
   lambda[0] = std::numeric_limits<float>::max();
   // Algorithm main loop
   for (n = 1; n < N; ++n) {
-    // Initialization
+// Initialization
+#ifdef DEBUG
+    std::cout << "Loop on item " << n << '\n';
+#endif
     pi[n] = n;
     lambda[n] = std::numeric_limits<float>::max();
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(12)
     for (i = 0; i < n; ++i) {
       M[i] = 0;
       for (j = 0; j < P; ++j) {
@@ -128,26 +131,79 @@ int main(int argc, char *argv[]) {
         M[i] += (ij - nj) * (ij - nj);
       }
       M[i] = std::sqrt(M[i]);
+#ifdef DEBUG
+      std::cout << "    M[" << i << "] = " << M[i] << '\n';
+#endif
     }
 
     // Update
     // #pragma omp parallel for
     for (i = 0; i < n; ++i) {
+#ifdef DEBUG
+      std::cout << "    lambda[" << i << "](" << std::setw(3)
+                << (lambda[i] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[i]))
+                << ") >= M[" << i << "](" << std::setw(3) << M[i] << ") ? "
+                << std::to_string(lambda[i] >= M[i]);
+#endif
       if (lambda[i] >= M[i]) {
+#ifdef DEBUG
+        std::cout << " => M[pi[" << i << "]](M[" << pi[i] << "]) = min(M[pi["
+                  << i << "]](" << std::setw(3) << M[pi[i]] << "), lambda[" << i
+                  << "](" << std::setw(3)
+                  << (lambda[i] == std::numeric_limits<float>::max()
+                          ? "Inf"
+                          : std::to_string(lambda[i]))
+                  << ")), lambda[" << i << "] = M[" << i << "](" << std::setw(3)
+                  << M[i] << "), pi[" << i << "] = " << n;
+#endif
         M[pi[i]] = std::min(M[pi[i]], lambda[i]);
         lambda[i] = M[i];
         pi[i] = n;
       } else {
+#ifdef DEBUG
+        std::cout << " => M[pi[" << i << "]](M[" << pi[i] << "]) = min(M[pi["
+                  << i << "]](" << std::setw(3) << M[pi[i]] << "), M[" << i
+                  << "](" << std::setw(3) << M[i] << "))";
+#endif
         M[pi[i]] = std::min(M[pi[i]], M[i]);
       }
+#ifdef DEBUG
+      std::cout << '\n';
+#endif
     }
 
-    // Update status:
+// Update status:
+#ifdef DEBUG
+    std::cout << "  Update status:\n";
+#endif
     for (i = 0; i < n; ++i) {
+#ifdef DEBUG
+      std::cout << "    lambda[" + std::to_string(i) + "]("
+                << (lambda[i] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[i])) +
+                       ") >= lambda[pi["
+                << i << "]](" << std::setw(3)
+                << (lambda[pi[i]] == std::numeric_limits<float>::max()
+                        ? "Inf"
+                        : std::to_string(lambda[pi[i]]))
+                << ") ? " << std::to_string(lambda[i] >= lambda[pi[i]]);
+#endif
       if (lambda[i] >= lambda[pi[i]]) {
+#ifdef DEBUG
+        std::cout << " => pi[" << i << "] = " << n;
+#endif
         pi[i] = n;
       }
+#ifdef DEBUG
+      std::cout << '\n';
+#endif
     }
+#ifdef DEBUG
+    std::cout << '\n';
+#endif
   }
 
   size_t idx[N];
@@ -161,7 +217,7 @@ int main(int argc, char *argv[]) {
       std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 
   // some nice output
-  std::cout << "\rDone.                            \n";
+  std::cout << "Done.\n";
   std::cout << "Time       : " << elapsed.count() << "ms.\n";
 
 #ifdef DEBUG_OUT
