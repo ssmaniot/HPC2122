@@ -3,13 +3,12 @@
 #include <random>
 
 #include "MatrixOperations.hpp"
-#include "MultivariateNormalDistribution.hpp"
 
 int main(int argc, char *argv[]) {
-  constexpr size_t p = 7;
-  constexpr size_t min_n = 3;
-  constexpr size_t max_n = 10;
-  constexpr size_t groups = 3;
+  constexpr size_t p = 100;
+  constexpr size_t min_n = 1000;
+  constexpr size_t max_n = 1500;
+  constexpr size_t groups = 5;
   MappedData::Linalg::Matrix<double> m{1, p};
   size_t i, j, n, g;
 

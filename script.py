@@ -15,11 +15,12 @@ def main():
     begin = time()
     Z = linkage(X, 'single')
     elapsed = time() - begin
-    print('Execution time: ', elapsed, 's', sep='')
-    print(Z)
-    fig = plt.figure(figsize=(25,10))
-    dn = dendrogram(Z)
-    plt.show()
+    print('Execution time: ', np.round(elapsed, 3), 's', sep='')
+    # print(Z)
+    # fig = plt.figure(figsize=(25,10))
+    # dn = dendrogram(Z)
+    # print(np.array(dn['icoord']).astype('int'))
+    # plt.show()
 
 
 if __name__ == '__main__':
